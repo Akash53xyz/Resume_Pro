@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Resume Builder</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        :root {
+            --primary-bg: #9ea396; /* Sage green from Catrine Ziv image */
+            --primary-text: #ffffff;
+            --secondary-bg: #f8f7f2;
+            --secondary-text: #333333;
+            --accent-color: #646a5d;
+            --alert-color: #e53935;
+            --btn-color: #4a5043;
+            --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: #e9ecef;
+            color: #333;
+            padding: 20px;
+        }
+
+        /* Container Management */
+        .app-container {
+            max-width: 950px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h1.app-title {
+            text-align: center;
+            color: var(--accent-color);
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #form-page, #alert-page, #preview-wrapper {
+            display: none;
+        }
+        
+        #form-page {
+            display: block; /* Form visible by default */
+        }
+
+        /* Form Styles */
+        .form-section {
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .form-section h3 {
+            display: flex;
+            align-items: center;
+            font-size: 18px;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .btn-plus {
+            background: var(--accent-color);
+            color: #fff;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            margin-left: 10px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-plus:hover { background: #333; }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="text"], input[type="email"], input[type="number"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: var(--font-main);
+        }
+
+        textarea {
+            resize: vertical;
+            height: 80px;
+        }
+
+        .dynamic-item {
+            background: #fdfdfd;
+            border: 1px solid #eee;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .btn-remove {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--alert-color);
+            font-size: 18px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .photo-upload-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .photo-preview-circle {
+            width: 140px;
+            height: 140px;
+            border-radius: 5px; /* Square with slight curve per image_7 */
+            background: #eee;
+            border: 2px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .photo-preview-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .photo-preview-circle span {
+            color: #888;
+            font-size: 12px;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .photo-input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .btn-primary {
+            background: var(--btn-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 0 10px;
+        }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-danger { background: var(--alert-color); }
+
+        /* Alert Page */
+        #alert-page {
+            border: 3px solid var(--alert-color);
+            background: #fffafa;
+            padding: 40px;
+            text-align: center;
+        }
+        #alert-page h2 {
+            color: var(--alert-color);
+            margin-bottom: 20px;
+        }
+        #missing-list {
+            text-align: left;
+            display: inline-block;
+            margin: 20px 0;
+            color: var(--alert-color);
+            font-weight: bold;
+            font-size: 16px;
+        }
+        #missing-list li { margin-bottom: 8px; }
+
+        /* Resume Preview Layout (Catrine Ziv Style) */
+        #resume-document {
+            display: grid;
+            grid-template-columns: 35% 65%;
+            width: 100%;
+            min-height: 1056px; /* Approx 8.5x11 ratio */
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin: 0 auto;
+        }
+
+        /* Left Column */
+        .res-left {
+            background-color: var(--primary-bg);
+            color: var(--primary-text);
+            padding: 40px 30px;
+        }
+
+        .res-photo-container {
+            width: 100%;
+            aspect-ratio: 1/1.1;
+            overflow: hidden;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            background: #fff;
+        }
+
+        .res-photo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .res-section-left {
+            margin-bottom: 30px;
+        }
+
+        .res-heading-left {
+            font-size: 18px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .res-text-left {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .res-list-left {
+            list-style-type: none;
+        }
+
+        .res-list-left li {
+            font-size: 13px;
+            margin-bottom: 8px;
+            position: relative;
+            padding-left: 15px;
+        }
+
+        .res-list-left li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        .res-contact {
+            margin-top: 40px;
+            font-size: 12px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            padding-top: 20px;
+        }
+        .res-contact div {
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+
+        /* Right Column */
+        .res-right {
+            background-color: var(--secondary-bg);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .res-header {
+            margin-bottom: 40px;
+        }
+
+        .res-name {
+            font-size: 48px;
+            font-weight: 800;
+            color: var(--accent-color);
+            line-height: 1.1;
+            margin-bottom: 5px;
+        }
+
+        .res-title {
+            font-size: 16px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .res-section-right {
+            margin-bottom: 35px;
+        }
+
+        .res-heading-right {
+            font-size: 18px;
+            color: var(--accent-color);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .res-item {
+            margin-bottom: 20px;
+        }
+
+        .res-item-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: var(--secondary-text);
+        }
+
+        .res-item-subtitle {
+            font-size: 13px;
+            color: #666;
+            font-style: italic;
+            margin-bottom: 8px;
+        }
+
+        .res-item-bullets {
+            font-size: 13px;
+            color: #555;
+            padding-left: 18px;
+            line-height: 1.6;
+        }
+        
+        .res-item-bullets li {
+            margin-bottom: 4px;
+        }
+
+        .res-percentage {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin-top: 5px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="main-container">
+    <h1 class="app-title">Resume Builder</h1>
+
+    <div id="form-page">
+        <form id="builder-form">
+            
+            <div class="photo-upload-box">
+                <div class="photo-preview-circle" id="photo-border">
+                    <span id="photo-text">Click to Upload Photo *</span>
+                    <img id="photo-img" src="" alt="Profile">
+                    <input type="file" id="inp-photo" class="photo-input" accept="image/*">
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Personal Info</h3>
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" id="inp-name" placeholder="e.g. Catrine Ziv" required>
+                </div>
+                <div class="form-group">
+                    <label>Job Title *</label>
+                    <input type="text" id="inp-title" placeholder="e.g. IT Project Manager" required>
+                </div>
+                <div class="form-group">
+                    <label>About Profile *</label>
+                    <textarea id="inp-about" placeholder="I am an IT project manager with holistic knowledge..." required></textarea>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Contact Details</h3>
+                <div class="form-group">
+                    <label>Mobile Number *</label>
+                    <input type="text" id="inp-phone" placeholder="+123-456-7890" required>
+                </div>
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="inp-email" placeholder="hello@reallygreatsite.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Location *</label>
+                    <input type="text" id="inp-location" placeholder="City, Country" required>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Skills <button type="button" class="btn-plus" onclick="addSkill()">+</button></h3>
+                <div id="skills-container"></div>
+            </div>
+
+            <div class="form-section">
+                <h3>Languages <button type="button" class="btn-plus" onclick="addLanguage()">+</button></h3>
+                <div id="languages-container"></div>
+            </div>
+
+            <div class="form-section">
+                <h3>Work Experience <button type="button" class="btn-plus" onclick="addExperience()">+</button></h3>
+                <div id="experience-container"></div>
+            </div>
+
+            <div class="form-section">
+                <h3>Educational History <button type="button" class="btn-plus" onclick="addEducation()">+</button></h3>
+                <div id="education-container"></div>
+            </div>
+
+            <div class="controls">
+                <button type="button" class="btn-primary" onclick="generatePreview()">Preview Resume</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="alert-page">
+        <h2>Missing Information</h2>
+        <p>Please fill out the following required fields to generate your resume:</p>
+        <ul id="missing-list"></ul>
+        <div class="controls">
+            <button type="button" class="btn-primary btn-danger" onclick="showForm()">Back to Edit</button>
+        </div>
+    </div>
+
+    <div id="preview-wrapper">
+        <div class="controls" style="margin-bottom: 20px;">
+            <button type="button" class="btn-primary" onclick="showForm()">Edit Details</button>
+            <button type="button" class="btn-primary" onclick="downloadPDF()">Download PDF</button>
+        </div>
+
+        <div id="resume-document">
+            <div class="res-left">
+                <div class="res-photo-container">
+                    <img id="out-photo" src="" alt="Profile Photo">
+                </div>
+
+                <div class="res-section-left">
+                    <div class="res-heading-left">Profile</div>
+                    <div class="res-text-left" id="out-about"></div>
+                </div>
+
+                <div class="res-section-left">
+                    <div class="res-heading-left">Skills</div>
+                    <ul class="res-list-left" id="out-skills"></ul>
+                </div>
+
+                <div class="res-section-left">
+                    <div class="res-heading-left">Languages</div>
+                    <ul class="res-list-left" id="out-languages"></ul>
+                </div>
+
+                <div class="res-contact">
+                    <div id="out-phone"></div>
+                    <div id="out-email"></div>
+                    <div id="out-location"></div>
+                </div>
+            </div>
+
+            <div class="res-right">
+                <div class="res-header">
+                    <div class="res-name" id="out-name"></div>
+                    <div class="res-title" id="out-title"></div>
+                </div>
+
+                <div class="res-section-right">
+                    <div class="res-heading-right">Work Experience</div>
+                    <div id="out-experience"></div>
+                </div>
+
+                <div class="res-section-right">
+                    <div class="res-heading-right">Educational History</div>
+                    <div id="out-education"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Photo Upload Logic
+    const photoInput = document.getElementById('inp-photo');
+    const photoImg = document.getElementById('photo-img');
+    const photoText = document.getElementById('photo-text');
+
+    photoInput.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                photoImg.src = event.target.result;
+                photoImg.style.display = 'block';
+                photoText.style.display = 'none';
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+
+    // Dynamic Fields Logic
+    function createRemoveBtn() {
+        return `<button type="button" class="btn-remove" onclick="this.parentElement.remove()">×</button>`;
+    }
+
+    function addSkill() {
+        const div = document.createElement('div');
+        div.className = 'dynamic-item form-group';
+        div.innerHTML = `
+            ${createRemoveBtn()}
+            <label>Skill Name *</label>
+            <input type="text" class="req-skill" placeholder="e.g. Project Management" required>
+        `;
+        document.getElementById('skills-container').appendChild(div);
+    }
+
+    function addLanguage() {
+        const div = document.createElement('div');
+        div.className = 'dynamic-item form-group';
+        div.innerHTML = `
+            ${createRemoveBtn()}
+            <label>Language *</label>
+            <input type="text" class="req-lang" placeholder="e.g. English - Native" required>
+        `;
+        document.getElementById('languages-container').appendChild(div);
+    }
+
+    function addExperience() {
+        const div = document.createElement('div');
+        div.className = 'dynamic-item form-group';
+        div.innerHTML = `
+            ${createRemoveBtn()}
+            <label>Job Title *</label>
+            <input type="text" class="req-exp-title" placeholder="e.g. Project Manager" required>
+            <label style="margin-top:10px">Company & Dates *</label>
+            <input type="text" class="req-exp-meta" placeholder="e.g. Westheon FGW | Oct 2017 - Present" required>
+            <label style="margin-top:10px">Responsibilities (Bullet points, separated by Enter) *</label>
+            <textarea class="req-exp-desc" placeholder="Conduct day-to-day project coordination..." required></textarea>
+        `;
+        document.getElementById('experience-container').appendChild(div);
+    }
+
+    function addEducation() {
+        const div = document.createElement('div');
+        div.className = 'dynamic-item form-group';
+        div.innerHTML = `
+            ${createRemoveBtn()}
+            <label>Institution Name *</label>
+            <input type="text" class="req-edu-inst" placeholder="e.g. HGFZ Graduate Center" required>
+            <label style="margin-top:10px">Degree & Dates *</label>
+            <input type="text" class="req-edu-meta" placeholder="e.g. Masters in Project Management | Jan 2013 - Dec 2014" required>
+            <label style="margin-top:10px">Percentage / GPA Subheading</label>
+            <input type="text" class="req-edu-perc" placeholder="e.g. GPA: 3.8 / Percentage: 92%">
+            <label style="margin-top:10px">Description (Bullet points, separated by Enter)</label>
+            <textarea class="req-edu-desc" placeholder="Studied project planning..."></textarea>
+        `;
+        document.getElementById('education-container').appendChild(div);
+    }
+
+    // Initialize with 1 of each dynamic field
+    addSkill();
+    addLanguage();
+    addExperience();
+    addEducation();
+
+    // Validation & Preview Logic
+    function generatePreview() {
+        const missing = [];
+        
+        // Check standard fields
+        const standardFields = [
+            { id: 'inp-name', name: 'Full Name' },
+            { id: 'inp-title', name: 'Job Title' },
+            { id: 'inp-about', name: 'About Profile' },
+            { id: 'inp-phone', name: 'Mobile Number' },
+            { id: 'inp-email', name: 'Email' },
+            { id: 'inp-location', name: 'Location' }
+        ];
+
+        standardFields.forEach(field => {
+            const el = document.getElementById(field.id);
+            if (!el.value.trim()) {
+                el.style.borderColor = 'red';
+                missing.push(field.name);
+            } else {
+                el.style.borderColor = '#ccc';
+            }
+        });
+
+        // Check Photo
+        if (!photoImg.src || photoImg.src === window.location.href) {
+            document.getElementById('photo-border').style.borderColor = 'red';
+            missing.push('Profile Photo');
+        } else {
+            document.getElementById('photo-border').style.borderColor = '#ccc';
+        }
+
+        // Check Dynamic Fields minimums
+        if (document.querySelectorAll('.req-skill').length === 0) missing.push('At least one Skill');
+        if (document.querySelectorAll('.req-lang').length === 0) missing.push('At least one Language');
+        if (document.querySelectorAll('.req-exp-title').length === 0) missing.push('At least one Work Experience');
+        if (document.querySelectorAll('.req-edu-inst').length === 0) missing.push('At least one Education record');
+
+        // Check Dynamic empty inputs
+        const dynInputs = document.querySelectorAll('.req-skill, .req-lang, .req-exp-title, .req-exp-meta, .req-exp-desc, .req-edu-inst, .req-edu-meta');
+        dynInputs.forEach(el => {
+            if (!el.value.trim()) {
+                el.style.borderColor = 'red';
+                if(!missing.includes('Fill all dynamic text boxes')) missing.push('Fill all dynamic text boxes');
+            } else {
+                el.style.borderColor = '#ccc';
+            }
+        });
+
+        if (missing.length > 0) {
+            const list = document.getElementById('missing-list');
+            list.innerHTML = '';
+            missing.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item;
+                list.appendChild(li);
+            });
+            document.getElementById('form-page').style.display = 'none';
+            document.getElementById('alert-page').style.display = 'block';
+            window.scrollTo(0,0);
+            return;
+        }
+
+        // Populate Preview
+        document.getElementById('out-photo').src = photoImg.src;
+        document.getElementById('out-name').textContent = document.getElementById('inp-name').value;
+        document.getElementById('out-title').textContent = document.getElementById('inp-title').value;
+        document.getElementById('out-about').textContent = document.getElementById('inp-about').value;
+        document.getElementById('out-phone').innerHTML = `<i class="fas fa-phone"></i> ` + document.getElementById('inp-phone').value;
+        document.getElementById('out-email').innerHTML = `<i class="fas fa-envelope"></i> ` + document.getElementById('inp-email').value;
+        document.getElementById('out-location').innerHTML = `<i class="fas fa-map-marker-alt"></i> ` + document.getElementById('inp-location').value;
+
+        // Skills
+        const outSkills = document.getElementById('out-skills');
+        outSkills.innerHTML = '';
+        document.querySelectorAll('.req-skill').forEach(el => {
+            outSkills.innerHTML += `<li>${el.value}</li>`;
+        });
+
+        // Languages
+        const outLangs = document.getElementById('out-languages');
+        outLangs.innerHTML = '';
+        document.querySelectorAll('.req-lang').forEach(el => {
+            outLangs.innerHTML += `<li>${el.value}</li>`;
+        });
+
+        // Experience
+        const expContainer = document.getElementById('experience-container');
+        const outExp = document.getElementById('out-experience');
+        outExp.innerHTML = '';
+        expContainer.querySelectorAll('.dynamic-item').forEach(item => {
+            const title = item.querySelector('.req-exp-title').value;
+            const meta = item.querySelector('.req-exp-meta').value;
+            const desc = item.querySelector('.req-exp-desc').value;
+            
+            let bullets = '';
+            desc.split('\n').forEach(line => {
+                if(line.trim()) bullets += `<li>${line.trim()}</li>`;
+            });
+
+            outExp.innerHTML += `
+                <div class="res-item">
+                    <div class="res-item-title">${title}</div>
+                    <div class="res-item-subtitle">${meta}</div>
+                    <ul class="res-item-bullets">${bullets}</ul>
+                </div>
+            `;
+        });
+
+        // Education
+        const eduContainer = document.getElementById('education-container');
+        const outEdu = document.getElementById('out-education');
+        outEdu.innerHTML = '';
+        eduContainer.querySelectorAll('.dynamic-item').forEach(item => {
+            const inst = item.querySelector('.req-edu-inst').value;
+            const meta = item.querySelector('.req-edu-meta').value;
+            const perc = item.querySelector('.req-edu-perc').value;
+            const desc = item.querySelector('.req-edu-desc').value;
+            
+            let bullets = '';
+            desc.split('\n').forEach(line => {
+                if(line.trim()) bullets += `<li>${line.trim()}</li>`;
+            });
+
+            outEdu.innerHTML += `
+                <div class="res-item">
+                    <div class="res-item-title">${inst}</div>
+                    <div class="res-item-subtitle">${meta}</div>
+                    ${perc.trim() ? `<div class="res-percentage">${perc}</div>` : ''}
+                    ${bullets ? `<ul class="res-item-bullets" style="margin-top:5px;">${bullets}</ul>` : ''}
+                </div>
+            `;
+        });
+
+        // Switch Views
+        document.getElementById('form-page').style.display = 'none';
+        document.getElementById('alert-page').style.display = 'none';
+        document.getElementById('preview-wrapper').style.display = 'block';
+        
+        // Remove main container padding for true edge-to-edge PDF styling
+        document.getElementById('main-container').style.maxWidth = '100%';
+        document.getElementById('main-container').style.background = 'transparent';
+        document.getElementById('main-container').style.boxShadow = 'none';
+        document.getElementById('main-container').style.padding = '0';
+        document.querySelector('.app-title').style.display = 'none';
+        
+        window.scrollTo(0,0);
+    }
+
+    function showForm() {
+        document.getElementById('preview-wrapper').style.display = 'none';
+        document.getElementById('alert-page').style.display = 'none';
+        document.getElementById('form-page').style.display = 'block';
+        
+        // Restore container styles
+        document.getElementById('main-container').style.maxWidth = '950px';
+        document.getElementById('main-container').style.background = '#fff';
+        document.getElementById('main-container').style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+        document.getElementById('main-container').style.padding = '30px';
+        document.querySelector('.app-title').style.display = 'block';
+        
+        window.scrollTo(0,0);
+    }
+
+    function downloadPDF() {
+        const element = document.getElementById('resume-document');
+        const opt = {
+            margin:       0,
+            filename:     'My_Resume.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+</body>
+</html>

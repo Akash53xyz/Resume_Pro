@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Builder - Blank Form & Preview</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        /* --- General Styles --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        /* --- Page & Modal Controls --- */
+        #form-page, #alert-page, #preview-page, #control-modal {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin: 0 auto;
+            max-width: 900px;
+        }
+        #form-page {
+            display: block;
+        }
+        .form-control-btn, .modal-control-btn {
+            background-color: #00897b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px;
+            font-size: 16px;
+        }
+        .form-control-btn:hover, .modal-control-btn:hover {
+            background-color: #00695c;
+        }
+        .form-control-btn.alert-btn {
+            background-color: #f44336;
+        }
+        .form-control-btn.alert-btn:hover {
+            background-color: #d32f2f;
+        }
+        .alert-heading, .alert-fields {
+            color: red;
+            font-weight: bold;
+        }
+        .required-star {
+            color: red;
+        }
+
+        /* --- Form Fields Styles --- */
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="number"], textarea, input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box; /* Important for width with padding */
+        }
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+        .dynamic-point-group {
+            border: 1px solid #eee;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            position: relative;
+        }
+        .dynamic-plus-btn {
+            background-color: transparent;
+            color: #00897b;
+            border: 2px solid #00897b;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 20px;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+        .dynamic-plus-btn:hover {
+            background-color: #e0f2f1;
+        }
+        .plus-heading {
+            font-size: 28px;
+            color: #00897b;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+
+        /* --- Photo Preview Styles --- */
+        #photo-preview-container {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%; /* Replicating rounded image frame */
+            overflow: hidden;
+            border: 5px solid #00897b;
+            margin-bottom: 15px;
+            display: none; /* Hidden until upload */
+        }
+        #photo-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* --- Preview Page Styles (Replicating the visual design of image_4.png) --- */
+        #preview-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            padding: 20px;
+        }
+        .p-left-col {
+            background-color: white;
+            padding-left: 20px;
+        }
+        .p-right-col {
+            background-color: white;
+            padding-right: 20px;
+        }
+        .p-header-block {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+        .p-photo-block {
+            background-color: #000; /* Replicating the black block */
+            width: 150px;
+            height: 150px;
+            border-radius: 15px; /* Replicating rounded card frame */
+            overflow: hidden;
+            border: 5px solid white;
+            position: relative;
+            z-index: 10;
+        }
+        .p-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .p-name-title {
+            margin-left: 20px;
+        }
+        .p-name {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+        .p-title {
+            font-size: 18px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .p-section-heading {
+            color: #333;
+            text-transform: uppercase;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        .p-text-block {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        .p-language-point {
+            margin-bottom: 15px;
+        }
+        .p-lang-name {
+            font-weight: bold;
+            color: #333;
+        }
+        .p-prof-bar-container {
+            width: 100%;
+            height: 8px;
+            background-color: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .p-prof-bar {
+            height: 100%;
+            background-color: #333; /* Replicating dark grey proficiency bars */
+            border-radius: 4px;
+        }
+        .p-contact-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .p-contact-icon {
+            color: #333;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .p-edu-card, .p-work-card {
+            margin-bottom: 20px;
+        }
+        .p-card-heading {
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+        }
+        .p-card-place-date {
+            color: #777;
+            font-size: 14px;
+            font-style: italic;
+        }
+        .p-card-point {
+            margin-bottom: 10px;
+        }
+        .p-bullet-point {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            list-style-type: disc;
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Blank Resume Builder - Fill Details Below</h1>
+
+    <div id="form-page">
+        <h2>Enter Details to Build Your Resume</h2>
+        <form id="resume-form">
+            <div class="form-group">
+                <label>Upload Photo <span class="required-star">*</span></label>
+                <div id="photo-preview-container"><img id="photo-preview" src="" alt="Photo Preview"></div>
+                <input type="file" id="inp-photo" name="photo" accept="image/*" required>
+            </div>
+
+            <div class="form-group">
+                <label>About Yourself (Profile) <span class="required-star">*</span></label>
+                <textarea id="inp-about" name="about" placeholder="A creative Graphic Designer with over 4 years of experience..." required></textarea>
+            </div>
+
+            <h3>CONTACT DETAILS</h3>
+            <div class="form-group">
+                <label>Phone Number (e.g. +123-456-7890) <span class="required-star">*</span></label>
+                <input type="text" id="inp-phone" name="phone" placeholder="+123-456-7890" required>
+            </div>
+            <div class="form-group">
+                <label>Email Address <span class="required-star">*</span></label>
+                <input type="text" id="inp-email" name="email" placeholder="hello@reallygreatsite.com" required>
+            </div>
+            <div class="form-group">
+                <label>Location (e.g. 123 Anywhere St., Any City) <span class="required-star">*</span></label>
+                <input type="text" id="inp-location" name="location" placeholder="123 Anywhere St., Any City" required>
+            </div>
+
+            <h3>SKILLS <button type="button" class="dynamic-plus-btn" onclick="addSkillPoint()">+</button></h3>
+            <div id="skills-container"></div>
+
+            <h3>LANGUAGES <button type="button" class="dynamic-plus-btn" onclick="addLanguagePoint()">+</button></h3>
+            <div id="languages-container"></div>
+
+            <h3>WORK EXPERIENCE <button type="button" class="dynamic-plus-btn" onclick="addWorkExperienceCard()">+</button></h3>
+            <div id="work-experience-container"></div>
+
+            <h3>EDUCATION <button type="button" class="dynamic-plus-btn" onclick="addEducationCard()">+</button></h3>
+            <div id="education-container"></div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <button type="button" class="form-control-btn" id="preview-btn" onclick="validateAndPreview()">Preview Resume</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="alert-page">
+        <h2 class="alert-heading">MISSING DETAILS IN FORM</h2>
+        <p>Your resume form is not complete. Please fill in the details for the following required sections:</p>
+        <ul id="missing-fields-list">
+            </ul>
+        <div style="text-align: center; margin-top: 30px;">
+            <button type="button" class="form-control-btn alert-btn" onclick="returnToForm()">Return to Form</button>
+        </div>
+    </div>
+
+    <div id="preview-page">
+        <h2>YOUR RESUME PREVIEW (Design inspired by photo)</h2>
+        <div id="preview-content">
+            </div>
+
+        <div id="control-modal" style="display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; text-align: center; width: auto; max-width: 400px; padding: 30px; border-radius: 10px; background: white; box-shadow: 0 10px 20px rgba(0,0,0,0.2); border: 1px solid #eee;">
+            <h3>OPTIONS FOR YOUR RESUME</h3>
+            <p>What would you like to do with this resume preview?</p>
+            <div style="margin-top: 25px;">
+                <button type="button" class="modal-control-btn" onclick="returnToForm()">Edit Resume</button>
+                <button type="button" class="modal-control-btn" id="download-pdf-btn" onclick="downloadResumePDF()">Download in PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Image Handling ---
+        const inpPhoto = document.getElementById('inp-photo');
+        const photoPreviewContainer = document.getElementById('photo-preview-container');
+        const photoPreview = document.getElementById('photo-preview');
+
+        inpPhoto.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    photoPreview.src = event.target.result;
+                    photoPreviewContainer.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // --- Dynamic Section Adders ---
+        // For Skills
+        let skillPointCounter = 0;
+        function addSkillPoint() {
+            skillPointCounter++;
+            const container = document.getElementById('skills-container');
+            const skillDiv = document.createElement('div');
+            skillDiv.className = 'form-group dynamic-point-group';
+            skillDiv.innerHTML = `
+                <label>Skill Point ${skillPointCounter}</label>
+                <input type="text" name="skill_${skillPointCounter}" placeholder="Branding & Visual Identity" required>
+            `;
+            container.appendChild(skillDiv);
+        }
+
+        // For Languages
+        let langPointCounter = 0;
+        function addLanguagePoint() {
+            langPointCounter++;
+            const container = document.getElementById('languages-container');
+            const langDiv = document.createElement('div');
+            langDiv.className = 'form-group dynamic-point-group';
+            langDiv.innerHTML = `
+                <label>Language Point ${langPointCounter}</label>
+                <input type="text" name="lang_${langPointCounter}_name" placeholder="Language Name (e.g. English)" required>
+                <label style="margin-top: 10px;">Proficiency Percentage (1-100)</label>
+                <input type="number" name="lang_${langPointCounter}_prof" min="1" max="100" placeholder="100" required>
+            `;
+            container.appendChild(langDiv);
+        }
+
+        // For Work Experience Cards
+        let workCardCounter = 0;
+        function addWorkExperienceCard() {
+            workCardCounter++;
+            const container = document.getElementById('work-experience-container');
+            const workDiv = document.createElement('div');
+            workDiv.className = 'form-group dynamic-point-group';
+            workDiv.innerHTML = `
+                <label>Work Experience Card ${workCardCounter}</label>
+                <input type="text" name="work_${workCardCounter}_title" placeholder="Job Title (e.g. Graphic Designer)" required>
+                <input type="text" name="work_${workCardCounter}_company" placeholder="Company Name (e.g. Studio Shodwe)" style="margin-top: 10px;" required>
+                <input type="text" name="work_${workCardCounter}_date" placeholder="Dates (e.g. (2000-2004))" style="margin-top: 10px;" required>
+                <label style="margin-top: 10px;">Bullet Points (press enter for new point)</label>
+                <textarea name="work_${workCardCounter}_bullets" placeholder="Enter bullet points, one per line. Press Enter for a new line..." required></textarea>
+            `;
+            container.appendChild(workDiv);
+        }
+
+        // For Education Cards
+        let eduCardCounter = 0;
+        function addEducationCard() {
+            eduCardCounter++;
+            const container = document.getElementById('education-container');
+            const eduDiv = document.createElement('div');
+            eduDiv.className = 'form-group dynamic-point-group';
+            eduDiv.innerHTML = `
+                <label>Education Card ${eduCardCounter}</label>
+                <input type="text" name="edu_${eduCardCounter}_degree" placeholder="Degree/Course (e.g. Bachelor of Visual Communication Design)" required>
+                <input type="text" name="edu_${eduCardCounter}_institution" placeholder="Institution Name (e.g. Rimberio University)" style="margin-top: 10px;" required>
+                <input type="text" name="edu_${eduCardCounter}_date" placeholder="Dates (e.g. (2000-2004))" style="margin-top: 10px;" required>
+            `;
+            container.appendChild(eduDiv);
+        }
+
+        // --- Validation & Rendering Preview ---
+        function validateAndPreview() {
+            const form = document.getElementById('resume-form');
+            const previewPage = document.getElementById('preview-page');
+            const formPage = document.getElementById('form-page');
+            const alertPage = document.getElementById('alert-page');
+            const missingFieldsList = document.getElementById('missing-fields-list');
+
+            const formData = new FormData(form);
+            const missingFields = [];
+
+            // 1. Validate Form: Required Fields
+            if (!formData.get('photo')) missingFields.push('Profile Photo Upload');
+            if (!formData.get('about')) missingFields.push('About Yourself');
+            if (!formData.get('phone')) missingFields.push('Contact: Phone Number');
+            if (!formData.get('email')) missingFields.push('Contact: Email Address');
+            if (!formData.get('location')) missingFields.push('Contact: Location');
+
+            // Collect unique multi-point dynamic section inputs for validation
+            const inputs = form.querySelectorAll('input[required], textarea[required]');
+            inputs.forEach(input => {
+                if (!input.value.trim()) {
+                    input.style.borderColor = 'red';
+                    // We can also list dynamic points names more clearly if needed
+                } else {
+                    input.style.borderColor = '#ddd';
+                }
+            });
+
+            // If validation fails, show the Red Alert page
+            if (missingFields.length > 0) {
+                missingFieldsList.innerHTML = '';
+                missingFields.forEach(field => {
+                    const li = document.createElement('li');
+                    li.className = 'alert-fields';
+                    li.textContent = field;
+                    missingFieldsList.appendChild(li);
+                });
+                formPage.style.display = 'none';
+                alertPage.style.display = 'block';
+                return;
+            }
+
+            // 2. Clear previous alert page if shown
+            alertPage.style.display = 'none';
+            formPage.style.display = 'none';
+
+            // 3. Render Preview: Population
+            const previewContent = document.getElementById('preview-content');
+            previewContent.innerHTML = ''; // Clear previous preview content
+
+            // Create structure and populate
+            const leftCol = document.createElement('div');
+            leftCol.className = 'p-left-col';
+            const rightCol = document.createElement('div');
+            rightCol.className = 'p-right-col';
+
+            // -- Header --
+            const headerBlock = document.createElement('div');
+            headerBlock.className = 'p-header-block';
+            headerBlock.innerHTML = `
+                <div class="p-photo-block">
+                    <img class="p-photo" src="${photoPreview.src}" alt="Your Photo">
+                </div>
+                <div class="p-name-title">
+                    <div class="p-name">USER NAME</div>
+                    <div class="p-title">Graphic Designer</div>
+                </div>
+            `;
+            previewContent.appendChild(headerBlock);
+
+            // -- Left Column --
+            // Contact block with icons
+            const contactHeading = document.createElement('h3');
+            contactHeading.className = 'p-section-heading';
+            contactHeading.textContent = 'CONTACT';
+            leftCol.appendChild(contactHeading);
+
+            const phoneItem = document.createElement('div');
+            phoneItem.className = 'p-contact-item';
+            phoneItem.innerHTML = `<span class="p-contact-icon">📞</span> ${formData.get('phone')}`;
+            leftCol.appendChild(phoneItem);
+
+            const emailItem = document.createElement('div');
+            emailItem.className = 'p-contact-item';
+            emailItem.innerHTML = `<span class="p-contact-icon">✉</span> ${formData.get('email')}`;
+            leftCol.appendChild(emailItem);
+
+            const locationItem = document.createElement('div');
+            locationItem.className = 'p-contact-item';
+            locationItem.innerHTML = `<span class="p-contact-icon">📍</span> ${formData.get('location')}`;
+            leftCol.appendChild(locationItem);
+
+            // Language block with proficiency bars
+            if (langPointCounter > 0) {
+                const langHeading = document.createElement('h3');
+                langHeading.className = 'p-section-heading';
+                langHeading.textContent = 'LANGUAGES';
+                leftCol.appendChild(langHeading);
+
+                for (let i = 1; i <= langPointCounter; i++) {
+                    const name = formData.get(`lang_${i}_name`);
+                    const prof = formData.get(`lang_${i}_prof`);
+                    if (name && prof) {
+                        const langPoint = document.createElement('div');
+                        langPoint.className = 'p-language-point';
+                        langPoint.innerHTML = `
+                            <div class="p-lang-name">• ${name}</div>
+                            <div class="p-prof-bar-container">
+                                <div class="p-prof-bar" style="width: ${prof}%;"></div>
+                            </div>
+                        `;
+                        leftCol.appendChild(langPoint);
+                    }
+                }
+            }
+            previewContent.appendChild(leftCol);
+
+            // -- Right Column --
+            // Profile text
+            const profileHeading = document.createElement('h3');
+            profileHeading.className = 'p-section-heading';
+            profileHeading.style.marginTop = '0'; // Adjust due to structure
+            profileHeading.textContent = 'PROFILE';
+            rightCol.appendChild(profileHeading);
+
+            const profileText = document.createElement('p');
+            profileText.className = 'p-text-block';
+            profileText.textContent = formData.get('about');
+            rightCol.appendChild(profileText);
+
+            // Education block with cards
+            if (eduCardCounter > 0) {
+                const eduHeading = document.createElement('h3');
+                eduHeading.className = 'p-section-heading';
+                eduHeading.textContent = 'EDUCATION';
+                rightCol.appendChild(eduHeading);
+
+                for (let i = 1; i <= eduCardCounter; i++) {
+                    const degree = formData.get(`edu_${i}_degree`);
+                    const inst = formData.get(`edu_${i}_institution`);
+                    const date = formData.get(`edu_${i}_date`);
+                    if (degree && inst && date) {
+                        const eduCard = document.createElement('div');
+                        eduCard.className = 'p-edu-card';
+                        eduCard.innerHTML = `
+                            <div class="p-card-heading">• ${degree}</div>
+                            <div class="p-card-place-date">${inst} ${date}</div>
+                        `;
+                        rightCol.appendChild(eduCard);
+                    }
+                }
+            }
+
+            // Skills block with list points
+            if (skillPointCounter > 0) {
+                const skillHeading = document.createElement('h3');
+                skillHeading.className = 'p-section-heading';
+                skillHeading.textContent = 'SKILLS';
+                rightCol.appendChild(skillHeading);
+
+                for (let i = 1; i <= skillPointCounter; i++) {
+                    const skill = formData.get(`skill_${i}`);
+                    if (skill) {
+                        const skillPoint = document.createElement('p');
+                        skillPoint.className = 'p-card-point';
+                        skillPoint.innerHTML = `• ${skill}`;
+                        rightCol.appendChild(skillPoint);
+                    }
+                }
+            }
+
+            // Work Experience block with cards & bullet points
+            if (workCardCounter > 0) {
+                const workHeading = document.createElement('h3');
+                workHeading.className = 'p-section-heading';
+                workHeading.textContent = 'WORK EXPERIENCE';
+                rightCol.appendChild(workHeading);
+
+                for (let i = 1; i <= workCardCounter; i++) {
+                    const title = formData.get(`work_${i}_title`);
+                    const company = formData.get(`work_${i}_company`);
+                    const date = formData.get(`work_${i}_date`);
+                    const bulletsText = formData.get(`work_${i}_bullets`);
+                    if (title && company && date && bulletsText) {
+                        const workCard = document.createElement('div');
+                        workCard.className = 'p-work-card';
+                        workCard.innerHTML = `
+                            <div class="p-card-heading">• ${title}</div>
+                            <div class="p-card-place-date">${company} ${date}</div>
+                        `;
+                        const bulletPointsList = document.createElement('ul');
+                        bulletPointsList.className = 'p-bullet-point';
+                        bulletsText.split('\n').forEach(line => {
+                            if (line.trim()) {
+                                const li = document.createElement('li');
+                                li.textContent = line.trim();
+                                bulletPointsList.appendChild(li);
+                            }
+                        });
+                        workCard.appendChild(bulletPointsList);
+                        rightCol.appendChild(workCard);
+                    }
+                }
+            }
+            previewContent.appendChild(rightCol);
+
+            // Hide form, show preview and control options
+            formPage.style.display = 'none';
+            previewPage.style.display = 'block';
+        }
+
+        // --- Post-Preview Controls ---
+        function returnToForm() {
+            const previewPage = document.getElementById('preview-page');
+            const formPage = document.getElementById('form-page');
+            const alertPage = document.getElementById('alert-page');
+
+            previewPage.style.display = 'none';
+            alertPage.style.display = 'none';
+            formPage.style.display = 'block';
+        }
+
+        // --- PDF Generation Logic via html2pdf ---
+        function downloadResumePDF() {
+            // Note: Single file download for PDF requires a library. Since we've linked one via CDN, this is how you trigger it.
+            const element = document.getElementById('preview-content'); // Generate PDF from this container
+            const opt = {
+                margin:       [0, 0, 0, 0], // Replicate photo design with zero margin and custom styles
+                filename:     'My_Resume_Preview.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true }, // CORs needed for file images on some hosts
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            // Using library from CDN to download as PDF
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
+</body>
+</html>

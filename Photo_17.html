@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Resume Builder</title>
+    <style>
+        /* CSS STYLES */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; }
+        .main-container { max-width: 900px; margin: 0 auto; background: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; margin-bottom: 30px; }
+        h2 { font-size: 1.5em; color: #337ab7; border-bottom: 2px solid #337ab7; padding-bottom: 10px; margin-top: 30px; }
+        h3 { font-size: 1.1em; color: #444; margin-top: 20px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;}
+        .add-btn { cursor: pointer; color: #fff; background-color: #337ab7; font-size: 1rem; padding: 5px 12px; border-radius: 4px; border: none; transition: background-color 0.3s; font-weight: normal; }
+        .add-btn:hover { background-color: #286090; }
+
+        form { display: flex; flex-direction: column; gap: 15px; }
+        .form-group { display: flex; flex-direction: column; margin-bottom: 10px; }
+        label { font-weight: bold; margin-bottom: 5px; color: #555; }
+        input[type="text"], input[type="email"], input[type="file"], textarea { padding: 12px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem; width: 100%;}
+        input:focus, textarea:focus { border-color: #337ab7; outline: none; }
+        textarea { resize: vertical; min-height: 100px; }
+        .required-label { color: #d9534f; margin-left: 5px; font-weight: normal; font-size: 0.9em;}
+        .form-row { display: flex; gap: 15px; }
+        .form-row .form-group { flex: 1; }
+
+        .btn-group { display: flex; gap: 15px; justify-content: center; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;}
+        button { padding: 12px 25px; border: none; border-radius: 4px; color: #fff; background-color: #337ab7; cursor: pointer; font-size: 1rem; transition: background-color 0.3s; }
+        button:hover { background-color: #286090; }
+        .btn-preview { background-color: #5cb85c; }
+        .btn-preview:hover { background-color: #449d44; }
+        .btn-download { background-color: #f0ad4e; }
+        .btn-download:hover { background-color: #ec971f; }
+
+        .alert { background-color: #f2dede; color: #a94442; padding: 15px; border: 1px solid #ebccd1; border-radius: 4px; display: none; text-align: center; margin-bottom: 20px; font-weight: bold;}
+        
+        /* Dynamic List Item Styles */
+        .dynamic-list-item { border: 1px dashed #ccc; padding: 15px; border-radius: 6px; position: relative; margin-bottom: 15px; background-color: #fafafa;}
+        .remove-btn { position: absolute; top: 10px; right: 10px; color: #d9534f; cursor: pointer; font-weight: bold; font-size: 1.2rem; background: none; border: none; padding: 0;}
+        .remove-btn:hover { color: #c9302c; }
+        .edu-percentage { margin-top: 10px; }
+
+        /* Preview State Styles */
+        #preview-page { display: none; padding: 0; border: none;}
+        .preview-header { background-color: #2b333e; color: #fff; padding: 40px; text-align: left; display: flex; align-items: center; gap: 40px; border-radius: 8px 8px 0 0;}
+        .profile-photo-wrapper { width: 140px; height: 140px; border: 4px solid #fff; border-radius: 50%; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.2); flex-shrink: 0;}
+        .profile-photo-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        .preview-header-text h1 { color: #fff; text-align: left; margin: 0 0 10px 0; font-size: 2.5rem; font-weight: bold; text-transform: uppercase;}
+        .preview-header-text p { margin: 0; color: #b0b8c4; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 2px;}
+
+        .preview-body { padding: 40px; display: flex; gap: 40px; }
+        .preview-left-column { flex: 1; display: flex; flex-direction: column; gap: 30px;}
+        .preview-right-column { flex: 2; display: flex; flex-direction: column; gap: 30px;}
+        .preview-section { margin-bottom: 0; }
+        .preview-section h2 { margin-top: 0; font-size: 1.2rem; border-bottom: none; background-color: #6a7c92; color: #fff; padding: 8px 15px; border-radius: 4px; text-transform: uppercase; letter-spacing: 1px;}
+        
+        .contact-info p { margin: 10px 0; color: #444; font-size: 0.95rem; display: flex; align-items: center; gap: 10px;}
+        .contact-info strong { color: #2b333e; }
+        .preview-section p { color: #555; line-height: 1.6; }
+        
+        .experience-item, .education-item { border-bottom: 1px solid #eee; padding-bottom: 20px; margin-bottom: 20px;}
+        .experience-item:last-child, .education-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0;}
+        .item-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px;}
+        .experience-item-title, .education-item-title { font-weight: bold; color: #2b333e; font-size: 1.1rem; text-transform: uppercase;}
+        .item-dates { color: #777; font-size: 0.9rem; font-style: italic;}
+        .experience-item-subtitle, .education-item-subtitle { color: #555; font-size: 1rem; margin-bottom: 10px; font-weight: 500;}
+        .edu-item-percentage { font-weight: bold; color: #6a7c92; font-size: 0.95em; margin-top: 5px;}
+        
+        .skill-list, .language-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+        .skill-list li, .language-list li { color: #444; padding-left: 15px; position: relative;}
+        .skill-list li::before, .language-list li::before { content: '•'; position: absolute; left: 0; color: #6a7c92; font-weight: bold;}
+        
+        @media print {
+            body { -webkit-print-color-adjust: exact; margin: 0; padding: 0; background: #fff;}
+            .main-container { box-shadow: none; padding: 0; width: 100%; max-width: 100%; margin: 0;}
+            h1, form, .btn-group, .alert { display: none !important; }
+            #preview-page { display: block !important; }
+            .preview-header { padding: 30px; }
+            .preview-body { padding: 30px; gap: 20px;}
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>Resume Builder</h1>
+        <div class="alert" id="missedDetailsAlert">Action Required: Please fill in all the required fields highlighted in red.</div>
+        
+        <form id="resumeForm">
+            <div class="form-group">
+                <label>Profile Photo <span class="required-label">(Required)</span></label>
+                <input type="file" id="profilePhoto" accept="image/*">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Full Name <span class="required-label">(Required)</span></label>
+                    <input type="text" id="fullName" placeholder="e.g., Alexander Aronowitz">
+                </div>
+                <div class="form-group">
+                    <label>Job Title <span class="required-label">(Required)</span></label>
+                    <input type="text" id="jobTitle" placeholder="e.g., Marketing Manager">
+                </div>
+            </div>
+            
+            <h2>About Me (Profile)</h2>
+            <div class="form-group">
+                <label>Description <span class="required-label">(Required)</span></label>
+                <textarea id="aboutMe" placeholder="Write a short professional summary..."></textarea>
+            </div>
+            
+            <h2>Contact Details</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Mobile Number <span class="required-label">(Required)</span></label>
+                    <input type="text" id="mobNo" placeholder="+123-456-7890">
+                </div>
+                <div class="form-group">
+                    <label>Email Address <span class="required-label">(Required)</span></label>
+                    <input type="email" id="email" placeholder="hello@reallygreatsite.com">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Location <span class="required-label">(Required)</span></label>
+                <input type="text" id="location" placeholder="123 Anywhere St., Any City">
+            </div>
+            
+            <h3>Skills <button type="button" class="add-btn" id="addSkillBtn">+ Add Skill</button></h3>
+            <div id="skillsContainer">
+                <div class="form-group"><input type="text" name="skill[]" placeholder="e.g., Digital Marketing Strategy"></div>
+            </div>
+            
+            <h3>Languages <button type="button" class="add-btn" id="addLanguageBtn">+ Add Language</button></h3>
+            <div id="languagesContainer">
+                <div class="form-group"><input type="text" name="language[]" placeholder="e.g., English"></div>
+            </div>
+            
+            <h3>Work Experience <button type="button" class="add-btn" id="addWorkBtn">+ Add Experience</button></h3>
+            <div id="workExperienceContainer">
+                <div class="dynamic-list-item">
+                    <div class="form-row">
+                        <div class="form-group"><label>Dates <span class="required-label">(Required)</span></label><input type="text" name="workDates[]" placeholder="2006 - 2010"></div>
+                        <div class="form-group"><label>Job Title <span class="required-label">(Required)</span></label><input type="text" name="workRole[]" placeholder="Marketing Manager"></div>
+                    </div>
+                    <div class="form-group"><label>Company Name <span class="required-label">(Required)</span></label><input type="text" name="workCompany[]" placeholder="Salford & Co."></div>
+                    <div class="form-group"><label>Description <span class="required-label">(Required)</span></label><textarea name="workDesc[]" placeholder="Developed digital marketing strategies..."></textarea></div>
+                </div>
+            </div>
+            
+            <h3>Education <button type="button" class="add-btn" id="addEducationBtn">+ Add Education</button></h3>
+            <div id="educationContainer">
+                <div class="dynamic-list-item">
+                    <div class="form-row">
+                        <div class="form-group"><label>Dates <span class="required-label">(Required)</span></label><input type="text" name="eduDates[]" placeholder="2000 - 2004"></div>
+                        <div class="form-group"><label>Degree Name <span class="required-label">(Required)</span></label><input type="text" name="eduDegree[]" placeholder="Bachelor of Communication Science"></div>
+                    </div>
+                    <div class="form-group"><label>School/University <span class="required-label">(Required)</span></label><input type="text" name="eduSchool[]" placeholder="Rimberio University"></div>
+                    <div class="form-group edu-percentage"><label>Percentage / CGPA <span class="required-label">(Required)</span></label><input type="text" name="eduPercentage[]" placeholder="e.g., 85% or 3.8 CGPA"></div>
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <button type="submit" class="btn-preview">Preview & Download Resume</button>
+            </div>
+        </form>
+
+        <div id="preview-page">
+            <div class="preview-header">
+                <div class="profile-photo-wrapper">
+                    <img id="headerPhotoPreview" src="" alt="Profile Photo">
+                </div>
+                <div class="preview-header-text">
+                    <h1 id="previewFullName">Full Name</h1>
+                    <p id="previewJobTitle">Job Title</p>
+                </div>
+            </div>
+
+            <div class="preview-body">
+                <div class="preview-left-column">
+                    <div class="preview-section contact-info">
+                        <h2>Contact</h2>
+                        <p><strong>Phone:</strong> <span id="previewMobNo"></span></p>
+                        <p><strong>Email:</strong> <span id="previewEmail"></span></p>
+                        <p><strong>Address:</strong> <span id="previewLocation"></span></p>
+                    </div>
+                    <div class="preview-section">
+                        <h2>Skills</h2>
+                        <ul class="skill-list" id="previewSkillsList"></ul>
+                    </div>
+                    <div class="preview-section">
+                        <h2>Languages</h2>
+                        <ul class="language-list" id="previewLanguagesList"></ul>
+                    </div>
+                </div>
+                <div class="preview-right-column">
+                    <div class="preview-section">
+                        <h2>Profile</h2>
+                        <p id="previewAboutMe"></p>
+                    </div>
+                    <div class="preview-section">
+                        <h2>Work Experience</h2>
+                        <div id="previewExperience"></div>
+                    </div>
+                    <div class="preview-section">
+                        <h2>Education</h2>
+                        <div id="previewEducation"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <button class="btn-preview" onclick="backToEdit()">Edit Details</button>
+                <button class="btn-download" onclick="printToPDF()">Download PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const resumeForm = document.getElementById('resumeForm');
+        const previewPage = document.getElementById('preview-page');
+        const alertBox = document.getElementById('missedDetailsAlert');
+
+        // Dynamic Field Functions
+        function addField(containerId, htmlContent) {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            
+            if(containerId === 'skillsContainer' || containerId === 'languagesContainer') {
+                div.className = 'form-row';
+                div.style.marginBottom = '10px';
+                div.innerHTML = htmlContent + `<button type="button" class="remove-btn" onclick="removeItem(this)">&#10006;</button>`;
+            } else {
+                div.className = 'dynamic-list-item';
+                div.innerHTML = `<button type="button" class="remove-btn" onclick="removeItem(this)">&#10006;</button>` + htmlContent;
+            }
+            container.appendChild(div);
+        }
+
+        function removeItem(btn) { 
+            btn.parentElement.remove(); 
+        }
+
+        // Event Listeners for Adding Fields
+        document.getElementById('addSkillBtn').addEventListener('click', () => {
+            addField('skillsContainer', `<div class="form-group" style="flex:1; margin:0;"><input type="text" name="skill[]" placeholder="Add another skill"></div>`);
+        });
+
+        document.getElementById('addLanguageBtn').addEventListener('click', () => {
+            addField('languagesContainer', `<div class="form-group" style="flex:1; margin:0;"><input type="text" name="language[]" placeholder="Add another language"></div>`);
+        });
+
+        document.getElementById('addWorkBtn').addEventListener('click', () => {
+            addField('workExperienceContainer', `
+                <div class="form-row">
+                    <div class="form-group"><label>Dates <span class="required-label">(Required)</span></label><input type="text" name="workDates[]" placeholder="e.g., 2010 - 2014"></div>
+                    <div class="form-group"><label>Job Title <span class="required-label">(Required)</span></label><input type="text" name="workRole[]" placeholder="e.g., Senior Executive"></div>
+                </div>
+                <div class="form-group"><label>Company Name <span class="required-label">(Required)</span></label><input type="text" name="workCompany[]" placeholder="e.g., Arowwai Industries"></div>
+                <div class="form-group"><label>Description <span class="required-label">(Required)</span></label><textarea name="workDesc[]" placeholder="Job description..."></textarea></div>
+            `);
+        });
+
+        document.getElementById('addEducationBtn').addEventListener('click', () => {
+            addField('educationContainer', `
+                <div class="form-row">
+                    <div class="form-group"><label>Dates <span class="required-label">(Required)</span></label><input type="text" name="eduDates[]" placeholder="e.g., 2004 - 2006"></div>
+                    <div class="form-group"><label>Degree Name <span class="required-label">(Required)</span></label><input type="text" name="eduDegree[]" placeholder="e.g., Master's Degree"></div>
+                </div>
+                <div class="form-group"><label>School/University <span class="required-label">(Required)</span></label><input type="text" name="eduSchool[]" placeholder="e.g., Rimberio University"></div>
+                <div class="form-group edu-percentage"><label>Percentage / CGPA <span class="required-label">(Required)</span></label><input type="text" name="eduPercentage[]" placeholder="e.g., 90%"></div>
+            `);
+        });
+
+        // Form Submit Handler
+        resumeForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Reset Alert
+            alertBox.style.display = 'none';
+            let hasError = false;
+
+            // 1. Validate Photo
+            const photoInput = document.getElementById('profilePhoto');
+            if (!photoInput.files || photoInput.files.length === 0) {
+                photoInput.style.borderColor = '#d9534f';
+                hasError = true;
+            } else {
+                photoInput.style.borderColor = '#ccc';
+            }
+
+            // 2. Validate standard static fields
+            const requiredIds = ['fullName', 'jobTitle', 'aboutMe', 'mobNo', 'email', 'location'];
+            requiredIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el.value.trim()) {
+                    el.style.borderColor = '#d9534f';
+                    hasError = true;
+                } else {
+                    el.style.borderColor = '#ccc';
+                }
+            });
+
+            // 3. Validate Dynamic Arrays
+            const skillsInputs = document.querySelectorAll('input[name="skill[]"]');
+            const langInputs = document.querySelectorAll('input[name="language[]"]');
+            const workDates = document.querySelectorAll('input[name="workDates[]"]');
+            const workRoles = document.querySelectorAll('input[name="workRole[]"]');
+            const workComps = document.querySelectorAll('input[name="workCompany[]"]');
+            const workDescs = document.querySelectorAll('textarea[name="workDesc[]"]');
+            const eduDates = document.querySelectorAll('input[name="eduDates[]"]');
+            const eduDegs = document.querySelectorAll('input[name="eduDegree[]"]');
+            const eduSchools = document.querySelectorAll('input[name="eduSchool[]"]');
+            const eduPercs = document.querySelectorAll('input[name="eduPercentage[]"]');
+
+            // Helper function to validate node lists
+            const validateNodes = (nodes) => {
+                nodes.forEach(node => {
+                    if (!node.value.trim()) {
+                        node.style.borderColor = '#d9534f';
+                        hasError = true;
+                    } else {
+                        node.style.borderColor = '#ccc';
+                    }
+                });
+            };
+
+            validateNodes(skillsInputs);
+            validateNodes(langInputs);
+            validateNodes(workDates);
+            validateNodes(workRoles);
+            validateNodes(workComps);
+            validateNodes(workDescs);
+            validateNodes(eduDates);
+            validateNodes(eduDegs);
+            validateNodes(eduSchools);
+            validateNodes(eduPercs);
+
+            // If errors exist, stop and show alert
+            if (hasError) {
+                alertBox.style.display = 'block';
+                window.scrollTo(0, 0);
+                return;
+            }
+
+            // --- ALL VALID: PROCEED TO RENDER PREVIEW ---
+            
+            // Render Photo
+            if (photoInput.files && photoInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('headerPhotoPreview').src = e.target.result;
+                };
+                reader.readAsDataURL(photoInput.files[0]);
+            }
+
+            // Render Static Fields
+            document.getElementById('previewFullName').textContent = document.getElementById('fullName').value;
+            document.getElementById('previewJobTitle').textContent = document.getElementById('jobTitle').value;
+            document.getElementById('previewAboutMe').textContent = document.getElementById('aboutMe').value;
+            document.getElementById('previewMobNo').textContent = document.getElementById('mobNo').value;
+            document.getElementById('previewEmail').textContent = document.getElementById('email').value;
+            document.getElementById('previewLocation').textContent = document.getElementById('location').value;
+
+            // Render Skills
+            const previewSkillsList = document.getElementById('previewSkillsList');
+            previewSkillsList.innerHTML = '';
+            skillsInputs.forEach(input => {
+                if(input.value.trim()) {
+                    const li = document.createElement('li');
+                    li.textContent = input.value.trim();
+                    previewSkillsList.appendChild(li);
+                }
+            });
+
+            // Render Languages
+            const previewLanguagesList = document.getElementById('previewLanguagesList');
+            previewLanguagesList.innerHTML = '';
+            langInputs.forEach(input => {
+                if(input.value.trim()) {
+                    const li = document.createElement('li');
+                    li.textContent = input.value.trim();
+                    previewLanguagesList.appendChild(li);
+                }
+            });
+
+            // Render Work Experience
+            const previewExperience = document.getElementById('previewExperience');
+            previewExperience.innerHTML = '';
+            for(let i = 0; i < workDates.length; i++) {
+                if(workDates[i].value.trim()) {
+                    const div = document.createElement('div');
+                    div.className = 'experience-item';
+                    div.innerHTML = `
+                        <div class="item-header">
+                            <div class="experience-item-title">${workRoles[i].value}</div>
+                            <div class="item-dates">${workDates[i].value}</div>
+                        </div>
+                        <div class="experience-item-subtitle">${workComps[i].value}</div>
+                        <p>${workDescs[i].value.replace(/\n/g, '<br>')}</p>
+                    `;
+                    previewExperience.appendChild(div);
+                }
+            }
+
+            // Render Education
+            const previewEducation = document.getElementById('previewEducation');
+            previewEducation.innerHTML = '';
+            for(let i = 0; i < eduDates.length; i++) {
+                if(eduDates[i].value.trim()) {
+                    const div = document.createElement('div');
+                    div.className = 'education-item';
+                    div.innerHTML = `
+                        <div class="item-header">
+                            <div class="education-item-title">${eduDegs[i].value}</div>
+                            <div class="item-dates">${eduDates[i].value}</div>
+                        </div>
+                        <div class="education-item-subtitle">${eduSchools[i].value}</div>
+                        <div class="edu-item-percentage">Score: + ${eduPercs[i].value}</div>
+                    `;
+                    previewEducation.appendChild(div);
+                }
+            }
+
+            // Switch views
+            resumeForm.style.display = 'none';
+            document.querySelector('h1').style.display = 'none';
+            previewPage.style.display = 'block';
+            window.scrollTo(0, 0);
+        });
+
+        // Navigation Functions
+        function backToEdit() {
+            previewPage.style.display = 'none';
+            document.querySelector('h1').style.display = 'block';
+            resumeForm.style.display = 'flex';
+            window.scrollTo(0, 0);
+        }
+
+        function printToPDF() {
+            window.print();
+        }
+    </script>
+</body>
+</html>

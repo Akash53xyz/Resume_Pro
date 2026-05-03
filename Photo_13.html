@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Resume Builder & Preview</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        /* CSS Reset and Variables */
+        :root {
+            --primary-color: #00796b; 
+            --background-color: #f4f4f4;
+            --text-color: #333;
+            --alert-color: #f44336;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --transition-speed: 0.3s;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
+        h1.main-title {
+            text-align: center;
+            color: var(--text-color);
+            margin-bottom: 30px;
+        }
+
+        /* --- Page & Div Management --- */
+        #form-page, #alert-page, #preview-page {
+            display: none;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin: 0 auto;
+            max-width: 900px;
+        }
+        #form-page {
+            display: block; /* Show form initially */
+        }
+        .controls-row {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            margin-bottom: -10px;
+        }
+        .control-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background var(--transition-speed);
+        }
+        .control-btn:hover {
+            background-color: #00695c;
+        }
+        .control-btn.alert-btn {
+            background-color: var(--alert-color);
+        }
+        .control-btn.alert-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        /* --- Blank Form Page Styles --- */
+        .form-heading {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            font-size: 20px;
+            color: #555;
+        }
+        .btn-plus {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+        .btn-plus:hover {
+            background-color: #00695c;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], input[type="email"], textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+        .dynamic-point-group {
+            border: 1px solid #eee;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            position: relative;
+            background: #fafafa;
+        }
+        .point-remove {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            color: var(--alert-color);
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        /* Photo area and preview */
+        #photo-upload-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #photo-preview-box {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%; /* Replicating rounded image frame */
+            border: 5px solid white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            margin: 0 auto;
+            overflow: hidden;
+            background: #eee;
+            position: relative;
+        }
+        #photo-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+        #photo-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+            font-size: 14px;
+        }
+        input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        /* Percentage subheading input text area */
+        .education-subdirectory-percentage {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+            color: #777;
+        }
+
+        /* --- Validation Alert Page --- */
+        #alert-page {
+            border: 5px solid var(--alert-color);
+            color: var(--alert-color);
+            text-align: center;
+        }
+        .alert-heading {
+            font-weight: bold;
+            font-size: 30px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+        .alert-list {
+            text-align: left;
+            margin: 0 auto;
+            max-width: 400px;
+        }
+        .alert-list li {
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 18px;
+            color: var(--alert-color);
+        }
+        .alert-list li::before {
+            content: "• ";
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        /* --- Full Professional Resume Preview Page --- */
+        #resume-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .p-photo-block {
+            grid-column: 1 / 2;
+            width: 150px;
+            height: 150px;
+            border-radius: 15px; 
+            overflow: hidden;
+            border: 5px solid white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            margin: -25px 0 20px 20px; 
+            position: relative;
+            z-index: 10;
+        }
+        .p-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .p-left-col {
+            background: white;
+            padding-left: 20px;
+        }
+        .p-right-col {
+            background: white;
+            padding-right: 20px;
+            border-left: 2px solid #eee; 
+            padding-left: 20px;
+        }
+        .p-name-block {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: flex-end;
+            padding-bottom: 20px;
+        }
+        .p-name-title {
+            margin-left: 20px;
+        }
+        .p-name {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--text-color);
+            margin-bottom: 5px;
+        }
+        .p-title {
+            font-size: 18px;
+            color: #777;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .p-section-heading {
+            color: #333;
+            text-transform: uppercase;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 25px;
+            font-size: 18px;
+        }
+        .p-text-block {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+        }
+        .p-language-point {
+            margin-bottom: 15px;
+        }
+        .p-lang-name {
+            font-weight: bold;
+            color: #333;
+        }
+        .p-prof-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        .p-prof-bar {
+            height: 100%;
+            background: #333; 
+            border-radius: 4px;
+        }
+        .p-contact-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .p-contact-icon {
+            color: var(--text-color);
+            margin-right: 10px;
+            font-weight: bold;
+            width: 20px;
+        }
+        .p-edu-card, .p-work-card {
+            margin-bottom: 20px;
+        }
+        .p-card-heading {
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+        }
+        .p-card-place-date {
+            color: #777;
+            font-size: 14px;
+            font-style: italic;
+        }
+        .p-card-point {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        .p-bullet-point {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            list-style-type: disc;
+            margin-left: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1 class="main-title">Detailed Resume Builder</h1>
+
+    <div id="form-page">
+        <form id="resume-form">
+            <div id="photo-upload-container">
+                <label>Profile Photo Upload</label>
+                <div id="photo-preview-box">
+                    <img id="photo-preview" src="" alt="Photo Preview">
+                    <div id="photo-placeholder">Click to upload photo</div>
+                    <input type="file" id="inp-photo" name="photo" accept="image/*" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" id="inp-name" name="name" placeholder="Olivia Wilson" required>
+            </div>
+            <div class="form-group">
+                <label>Job Title</label>
+                <input type="text" id="inp-title" name="title" placeholder="Designer and Architect" required>
+            </div>
+            <div class="form-group">
+                <label>About Yourself / Profile</label>
+                <textarea id="inp-about" name="about" placeholder="A brief description about your professional background..." required></textarea>
+            </div>
+
+            <fieldset class="form-group" style="border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
+                <legend style="font-weight: bold; color: #555; padding: 0 5px;">CONTACT DETAILS</legend>
+                <div class="form-group">
+                    <label>Mob No.</label>
+                    <input type="text" id="inp-phone" name="phone" placeholder="+123-456-7890" required>
+                </div>
+                <div class="form-group">
+                    <label>Email.</label>
+                    <input type="email" id="inp-email" name="email" placeholder="hello@reallygreatsite.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Location.</label>
+                    <input type="text" id="inp-location" name="location" placeholder="123 Anywhere St., Any City" required>
+                </div>
+            </fieldset>
+
+            <h3 class="form-heading">SKILLS <button type="button" class="btn-plus" onclick="addSkillPoint()">+</button></h3>
+            <div id="skills-container" class="dynamic-list-container"></div>
+
+            <h3 class="form-heading">LANGUAGES <button type="button" class="btn-plus" onclick="addLanguagePoint()">+</button></h3>
+            <div id="languages-container" class="dynamic-list-container"></div>
+
+            <h3 class="form-heading">WORK EXPERIENCE <button type="button" class="btn-plus" onclick="addWorkExperienceCard()">+</button></h3>
+            <div id="work-experience-container" class="dynamic-list-container"></div>
+
+            <h3 class="form-heading">EDUCATION <button type="button" class="btn-plus" onclick="addEducationCard()">+</button></h3>
+            <div id="education-container" class="dynamic-list-container"></div>
+
+            <div class="controls-row">
+                <button type="button" class="control-btn" id="preview-btn" onclick="validateAndPreviewResume()"><i class="fas fa-eye"></i> Preview Resume</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="alert-page">
+        <h2 class="alert-heading">MISSING DETAILS IN FORM</h2>
+        <p>Your dynamic resume form is incomplete. Please fill in the details for the following required sections:</p>
+        <ul id="missing-fields-list" class="alert-list">
+            </ul>
+        <div class="controls-row">
+            <button type="button" class="control-btn alert-btn" onclick="returnToForm()"><i class="fas fa-edit"></i> Edit Resume</button>
+            <button type="button" class="control-btn" onclick="downloadAlertPDF()"><i class="fas fa-file-pdf"></i> Download Alert as PDF</button>
+        </div>
+    </div>
+
+    <div id="preview-page">
+        <h2 style="text-align: center; color: #333; margin-bottom: 30px;">YOUR RESUME PREVIEW</h2>
+        <div id="resume-container">
+            </div>
+        <div class="controls-row">
+            <button type="button" class="control-btn" onclick="returnToForm()"><i class="fas fa-edit"></i> Edit Resume</button>
+            <button type="button" class="control-btn" onclick="downloadResumePDF()"><i class="fas fa-file-pdf"></i> Download PDF</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Photo Handling & Preview ---
+        const inpPhoto = document.getElementById('inp-photo');
+        const photoPlaceholder = document.getElementById('photo-placeholder');
+        const photoPreview = document.getElementById('photo-preview');
+
+        inpPhoto.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    photoPreview.src = event.target.result;
+                    photoPreview.style.display = 'block';
+                    photoPlaceholder.style.display = 'none';
+                    document.getElementById('photo-preview-box').style.borderColor = 'white';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // --- Templates for Dynamic Point Creation ---
+        function addSkillPoint() {
+            const container = document.getElementById('skills-container');
+            const newPoint = document.createElement('div');
+            newPoint.className = 'dynamic-point-group form-group';
+            newPoint.innerHTML = `
+                <label>Skill</label>
+                <input type="text" name="skill[]" placeholder="e.g. Editing Software" required>
+                <span class="point-remove" onclick="this.parentElement.remove()">✖</span>
+            `;
+            container.appendChild(newPoint);
+        }
+
+        function addLanguagePoint() {
+            const container = document.getElementById('languages-container');
+            const newPoint = document.createElement('div');
+            newPoint.className = 'dynamic-point-group form-group';
+            newPoint.innerHTML = `
+                <label>Language Name</label>
+                <input type="text" name="lang_name[]" placeholder="e.g. Spanish" required>
+                <label style="margin-top: 10px;">Proficiency Percentage (1-100)</label>
+                <input type="number" name="lang_prof[]" min="1" max="100" placeholder="100" required>
+                <span class="point-remove" onclick="this.parentElement.remove()">✖</span>
+            `;
+            container.appendChild(newPoint);
+        }
+
+        function addWorkExperienceCard() {
+            const container = document.getElementById('work-experience-container');
+            const newPoint = document.createElement('div');
+            newPoint.className = 'dynamic-point-group form-group';
+            newPoint.innerHTML = `
+                <label>Job Title</label>
+                <input type="text" name="work_title[]" placeholder="e.g. Designer and Team Leader" required>
+                <input type="text" name="work_company[]" placeholder="Company (e.g. Wardiere Inc.)" style="margin-top: 10px;" required>
+                <input type="text" name="work_date[]" placeholder="Dates (e.g. 2020 - 2025)" style="margin-top: 10px;" required>
+                <textarea name="work_bullets[]" placeholder="Description/Bullets (separate with Enter)" style="margin-top: 10px;"></textarea>
+                <span class="point-remove" onclick="this.parentElement.remove()">✖</span>
+            `;
+            container.appendChild(newPoint);
+        }
+
+        function addEducationCard() {
+            const container = document.getElementById('education-container');
+            const newPoint = document.createElement('div');
+            newPoint.className = 'dynamic-point-group form-group';
+            newPoint.innerHTML = `
+                <label>Degree/Certification</label>
+                <input type="text" name="edu_degree[]" placeholder="e.g. Bachelor of Design" required>
+                <input type="text" name="edu_place[]" placeholder="Institution (e.g. Borcelle University)" style="margin-top: 10px;" required>
+                <input type="text" name="edu_date[]" placeholder="Dates (e.g. 2008 - 2012)" style="margin-top: 10px;" required>
+                <label class="education-subdirectory-percentage">Percentage / Grade (Optional)</label>
+                <input type="text" name="edu_percentage[]" placeholder="e.g. 85% or 3.8 GPA" style="margin-top: 2px;">
+                <span class="point-remove" onclick="this.parentElement.remove()">✖</span>
+            `;
+            container.appendChild(newPoint);
+        }
+
+        // Initialize with at least one card each
+        addSkillPoint();
+        addLanguagePoint();
+        addWorkExperienceCard();
+        addEducationCard();
+
+        // --- PREVIEW RESUME Function with Form Validation & Red Alert Page ---
+        function validateAndPreviewResume() {
+            const form = document.getElementById('resume-form');
+            const previewPage = document.getElementById('preview-page');
+            const formPage = document.getElementById('form-page');
+            const alertPage = document.getElementById('alert-page');
+            const missingFieldsList = document.getElementById('missing-fields-list');
+
+            const missingFields = [];
+
+            // Check standard inputs
+            const regularInputs = form.querySelectorAll('input[required], textarea[required]');
+            regularInputs.forEach(input => {
+                if (!input.value.trim()) {
+                    input.style.borderColor = 'red';
+                    // Format field name for the list
+                    let fieldName = input.placeholder || input.previousElementSibling.innerText || "A required field";
+                    if (!missingFields.includes(fieldName)) missingFields.push(fieldName);
+                } else {
+                    input.style.borderColor = '#ccc';
+                }
+            });
+
+            // Check dynamic lists
+            if (document.getElementById('skills-container').children.length === 0) {
+                missingFields.push("Skills (At least 1 Point)");
+            }
+            if (document.getElementById('education-container').children.length === 0) {
+                missingFields.push("Skills (At least 1 Point)");
+            }
+            if (document.getElementById('education-container').children.length === 0) {
+                missingFields.push("Education (At least 1 Card)");
+            }
+
+            // Photo check
+            if (photoPreview.src === "" || photoPreview.src.includes(window.location.href)) {
+                missingFields.push("Profile Photo");
+                document.getElementById('photo-preview-box').style.borderColor = 'red';
+            }
+
+            // Route based on validation
+            if (missingFields.length > 0) {
+                missingFieldsList.innerHTML = ''; 
+                missingFields.forEach(field => {
+                    const li = document.createElement('li');
+                    li.textContent = field;
+                    missingFieldsList.appendChild(li);
+                });
+                formPage.style.display = 'none';
+                alertPage.style.display = 'block';
+                window.scrollTo(0, 0); 
+                return; 
+            }
+
+            // Render Preview
+            alertPage.style.display = 'none';
+            formPage.style.display = 'none';
+            previewPage.style.display = 'block';
+            
+            const resumeContainer = document.getElementById('resume-container');
+            resumeContainer.innerHTML = ''; 
+
+            const formData = new FormData(form);
+
+            // --- Header: Photo, Name, Title ---
+            const headerBlock = document.createElement('div');
+            headerBlock.className = 'p-name-block';
+            headerBlock.innerHTML = `
+                <div class="p-photo-block">
+                    <img class="p-photo" src="${photoPreview.src}" alt="Your Photo">
+                </div>
+                <div class="p-name-title">
+                    <div class="p-name">${formData.get('name')}</div>
+                    <div class="p-title">${formData.get('title')}</div>
+                </div>
+            `;
+            resumeContainer.appendChild(headerBlock);
+
+            // --- Main Content ---
+            const leftCol = document.createElement('div');
+            leftCol.className = 'p-left-col';
+            const rightCol = document.createElement('div');
+            rightCol.className = 'p-right-col';
+
+            // CONTACT
+            const contactHeading = document.createElement('h3');
+            contactHeading.className = 'p-section-heading';
+            contactHeading.textContent = 'CONTACT';
+            leftCol.appendChild(contactHeading);
+
+            leftCol.innerHTML += `<div class="p-contact-item"><i class="fas fa-phone p-contact-icon"></i> ${formData.get('phone')}</div>`;
+            leftCol.innerHTML += `<div class="p-contact-item"><i class="fas fa-envelope p-contact-icon"></i> ${formData.get('email')}</div>`;
+            leftCol.innerHTML += `<div class="p-contact-item"><i class="fas fa-map-marker-alt p-contact-icon"></i> ${formData.get('location')}</div>`;
+
+            // LANGUAGES
+            const langHeading = document.createElement('h3');
+            langHeading.className = 'p-section-heading';
+            langHeading.textContent = 'LANGUAGES';
+            leftCol.appendChild(langHeading);
+
+            const langNames = formData.getAll('lang_name[]');
+            const langProfs = formData.getAll('lang_prof[]');
+            
+            langNames.forEach((name, index) => {
+                const prof = langProfs[index];
+                leftCol.innerHTML += `
+                    <div class="p-language-point">
+                        <div class="p-lang-name">• ${name}</div>
+                        <div class="p-prof-bar-container">
+                            <div class="p-prof-bar" style="width: ${prof}%;"></div>
+                        </div>
+                    </div>`;
+            });
+
+            // PROFILE
+            const profileHeading = document.createElement('h3');
+            profileHeading.className = 'p-section-heading';
+            profileHeading.style.marginTop = '0'; 
+            profileHeading.textContent = 'ABOUT ME';
+            rightCol.appendChild(profileHeading);
+
+            const profileText = document.createElement('p');
+            profileText.className = 'p-text-block';
+            profileText.textContent = formData.get('about');
+            rightCol.appendChild(profileText);
+
+            // EDUCATION 
+            const eduHeading = document.createElement('h3');
+            eduHeading.className = 'p-section-heading';
+            eduHeading.textContent = 'EDUCATION';
+            rightCol.appendChild(eduHeading);
+
+            const eduDegrees = formData.getAll('edu_degree[]');
+            const eduPlaces = formData.getAll('edu_place[]');
+            const eduDates = formData.getAll('edu_date[]');
+            const eduPercentages = formData.getAll('edu_percentage[]');
+
+            eduDegrees.forEach((degree, index) => {
+                const place = eduPlaces[index];
+                const date = eduDates[index];
+                const percentage = eduPercentages[index];
+                
+                rightCol.innerHTML += `
+                    <div class="p-edu-card">
+                        <div class="p-card-heading">• ${degree}</div>
+                        <div class="p-card-place-date">${place} | ${date}</div>
+                        ${percentage ? `<div style="margin-left: 20px; font-size: 13px; color: #555; font-weight: bold;">${percentage}</div>` : ''}
+                    </div>`;
+            });
+
+            // SKILLS 
+            const skillHeading = document.createElement('h3');
+            skillHeading.className = 'p-section-heading';
+            skillHeading.textContent = 'SKILLS';
+            rightCol.appendChild(skillHeading);
+
+            const skills = formData.getAll('skill[]');
+            const skillGrid = document.createElement('p');
+            skillGrid.className = 'p-card-point';
+            skills.forEach((skill, index) => {
+                skillGrid.innerHTML += `• ${skill}&nbsp;&nbsp;&nbsp;`;
+                if ((index + 1) % 2 === 0) skillGrid.innerHTML += '<br>';
+            });
+            rightCol.appendChild(skillGrid);
+
+            // WORK EXPERIENCE 
+            const workHeading = document.createElement('h3');
+            workHeading.className = 'p-section-heading';
+            workHeading.textContent = 'WORK EXPERIENCE';
+            rightCol.appendChild(workHeading);
+
+            const workTitles = formData.getAll('work_title[]');
+            const workCompanies = formData.getAll('work_company[]');
+            const workDates = formData.getAll('work_date[]');
+            const workBullets = formData.getAll('work_bullets[]');
+
+            workTitles.forEach((title, index) => {
+                const company = workCompanies[index];
+                const date = workDates[index];
+                const bulletsText = workBullets[index];
+
+                let bulletsHTML = "";
+                if (bulletsText.trim() !== "") {
+                    bulletsHTML = "<ul class='p-bullet-point'>";
+                    bulletsText.split('\n').forEach(line => {
+                        if (line.trim()) bulletsHTML += `<li>${line.trim()}</li>`;
+                    });
+                    bulletsHTML += "</ul>";
+                }
+
+                rightCol.innerHTML += `
+                    <div class="p-work-card">
+                        <div class="p-card-heading">• ${title}</div>
+                        <div class="p-card-place-date">${company} | ${date}</div>
+                        ${bulletsHTML}
+                    </div>`;
+            });
+
+            // Append columns
+            resumeContainer.appendChild(leftCol);
+            resumeContainer.appendChild(rightCol);
+            window.scrollTo(0, 0); 
+        }
+
+        // --- View & Button Controls ---
+        function returnToForm() {
+            document.getElementById('form-page').style.display = 'block';
+            document.getElementById('alert-page').style.display = 'none';
+            document.getElementById('preview-page').style.display = 'none';
+            window.scrollTo(0, 0); 
+        }
+
+        // --- PDF Generation ---
+        function downloadResumePDF() {
+            const element = document.getElementById('resume-container'); 
+            const opt = {
+                margin:       0.3, 
+                filename:     'My_Resume.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true }, 
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function downloadAlertPDF() {
+            const element = document.getElementById('alert-page');
+            const opt = {
+                margin:       0.5, 
+                filename:     'Missing_Resume_Details.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
+</body>
+</html>

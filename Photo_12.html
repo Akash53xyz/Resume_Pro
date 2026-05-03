@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detailed Resume Builder & Preview</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        /* CSS Reset and Variables */
+        :root {
+            --primary-color: #00796b; /* Accent color from green designs */
+            --background-color: #f4f4f4;
+            --text-color: #333;
+            --alert-color: #f44336;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --transition-speed: 0.3s;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 0;
+            color: var(--text-color);
+        }
+
+        /* --- Global Page & Div Management --- */
+        #form-page, #alert-page, #preview-page, #control-options-box {
+            display: none;
+        }
+        #form-page {
+            display: block; /* Show form initially */
+        }
+        .controls-row {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            margin-bottom: -10px;
+        }
+        .control-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background var(--transition-speed);
+        }
+        .control-btn:hover {
+            background-color: #00695c;
+        }
+        .control-btn.alert-btn {
+            background-color: var(--alert-color);
+        }
+        .control-btn.alert-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        /* --- Blank Form Page Styles --- */
+        .page-container {
+            max-width: 1000px;
+            margin: 20px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        h1 { text-align: center; color: var(--text-color); margin-bottom: 30px; }
+        
+        .form-heading {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            font-size: 20px;
+            color: #555;
+        }
+        .btn-plus {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 10px;
+            font-weight: bold;
+        }
+        .btn-plus:hover { background-color: #00695c; }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input[type="text"], input[type="email"], textarea, select {
+            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box;
+        }
+        textarea { resize: vertical; height: 100px; }
+        .dynamic-list-container { margin-bottom: 20px; }
+        .dynamic-item-group { border: 1px solid #eee; padding: 10px; border-radius: 4px; margin-bottom: 10px; position: relative; }
+        .dynamic-item-remove { position: absolute; top: 5px; right: 5px; color: var(--alert-color); cursor: pointer; font-weight: bold; }
+        .percentage-subheading { font-size: 14px; font-weight: bold; margin-top: 5px; display: block; color: #777; }
+
+        /* Photo Upload & Preview style */
+        #photo-upload-container { text-align: center; margin-bottom: 20px; }
+        #photo-preview-box {
+            width: 150px; height: 150px; border-radius: 50%; border: 5px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            margin: 0 auto; overflow: hidden; background: #eee; position: relative;
+        }
+        #photo-preview { width: 100%; height: 100%; object-fit: cover; display: none; }
+        #photo-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 14px;}
+        input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+        /* --- Validation Alert Page (Detail Page view with red border) --- */
+        #alert-page {
+            border: 5px solid var(--alert-color); /* Thick red border */
+            padding: 30px;
+            border-radius: 8px;
+            color: var(--alert-color);
+            text-align: center;
+        }
+        .alert-heading { font-weight: bold; font-size: 30px; margin-bottom: 20px; }
+        .alert-list { text-align: left; margin: 0 auto; max-width: 400px; }
+        .alert-list li { margin-bottom: 10px; font-weight: bold; font-size: 18px; color: var(--alert-color); }
+        .alert-list li::before { content: "• "; font-weight: bold; margin-right: 5px; }
+
+        /* --- Detailed Resume Preview Page (Design inspired by photos) --- */
+        #resume-container {
+            display: grid; grid-template-columns: 1fr 2fr; gap: 20px; padding: 20px;
+        }
+        .p-left-col { background: white; padding-left: 20px; }
+        .p-right-col { background: white; padding-right: 20px; border-left: 2px solid #eee; padding-left: 20px;}
+        .p-name-block { grid-column: 1 / -1; display: flex; align-items: flex-end; padding-bottom: 20px;}
+        .p-photo-block {
+            width: 150px; height: 150px; border-radius: 15px; /* card frame replica */ overflow: hidden;
+            border: 5px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin: -25px 0 20px 20px; position: relative; z-index: 10;
+        }
+        .p-photo { width: 100%; height: 100%; object-fit: cover; }
+        .p-name-title { margin-left: 20px; }
+        .p-name { font-size: 32px; font-weight: bold; color: var(--text-color); margin-bottom: 5px; }
+        .p-title { font-size: 18px; color: #777; text-transform: uppercase; letter-spacing: 2px; }
+        .p-section-heading { color: #333; text-transform: uppercase; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 25px; font-size: 18px; }
+        .p-text-block { font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 15px; }
+        .p-language-point { margin-bottom: 15px; }
+        .p-lang-name { font-weight: bold; color: #333; }
+        .p-prof-bar-container { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        .p-prof-bar { height: 100%; background: #333; border-radius: 4px; }
+        .p-contact-item { display: flex; align-items: center; margin-bottom: 10px; font-size: 14px; }
+        .p-contact-icon { color: var(--text-color); margin-right: 10px; font-weight: bold; }
+        .p-edu-card, .p-work-card { margin-bottom: 20px; }
+        .p-card-heading { font-weight: bold; color: #333; font-size: 16px; }
+        .p-card-place-date { color: #777; font-size: 14px; font-style: italic; }
+        .p-card-point { font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 10px; }
+        .p-edu-card-points { font-size: 14px; color: #555; line-height: 1.6; list-style-type: disc; margin-left: 20px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="page-container">
+        <h1>Detailed Resume Builder</h1>
+
+        <div id="form-page">
+            <form id="resume-form">
+                <div id="photo-upload-container">
+                    <label>Profile Photo Upload</label>
+                    <div id="photo-preview-box">
+                        <img id="photo-preview" src="" alt="">
+                        <div id="photo-placeholder">Click to upload photo</div>
+                        <input type="file" id="inp-photo" name="photo" accept="image/*" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="inp-name" name="name" placeholder="Pedro Fernandes" required>
+                </div>
+                <div class="form-group">
+                    <label>Job Title</label>
+                    <input type="text" id="inp-title" name="title" placeholder="Graphic Designer" required>
+                </div>
+                <div class="form-group">
+                    <label>About Yourself / Profile</label>
+                    <textarea id="inp-about" name="about" placeholder="A creative Graphic Designer with over 4 years of experience..." required></textarea>
+                </div>
+
+                <fieldset class="form-group">
+                    <legend>CONTACT DETAILS</legend>
+                    <div class="form-group">
+                        <label>Mob No.</label>
+                        <input type="text" id="inp-phone" name="phone" placeholder="+123-456-7890" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email.</label>
+                        <input type="email" id="inp-email" name="email" placeholder="hello@reallygreatsite.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Location.</label>
+                        <input type="text" id="inp-location" name="location" placeholder="123 Anywhere St., Any City" required>
+                    </div>
+                </fieldset>
+
+                <h3 class="form-heading">SKILLS <button type="button" class="btn-plus" onclick="addSkillPoint()">+</button></h3>
+                <div id="skills-container" class="dynamic-list-container"></div>
+
+                <h3 class="form-heading">LANGUAGES <button type="button" class="btn-plus" onclick="addLanguagePoint()">+</button></h3>
+                <div id="languages-container" class="dynamic-list-container"></div>
+
+                <h3 class="form-heading">WORK EXPERIENCE <button type="button" class="btn-plus" onclick="addWorkExperiencePoint()">+</button></h3>
+                <div id="work-experience-container" class="dynamic-list-container"></div>
+
+                <h3 class="form-heading">EDUCATION (Required) <button type="button" class="btn-plus" onclick="addEducationPoint()">+</button></h3>
+                <div id="education-container" class="dynamic-list-container"></div>
+
+                <div class="controls-row">
+                    <button type="button" class="control-btn" id="preview-btn" onclick="previewResume()">Preview Resume</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="alert-page">
+            <h2 class="alert-heading">MISSING DETAILS IN FORM</h2>
+            <p>Your Dynamic resume form is incomplete. Please fill in the details for the following required sections:</p>
+            <ul id="missing-fields-list" class="alert-list">
+                </ul>
+            <div class="controls-row">
+                <button type="button" class="control-btn alert-btn" onclick="returnToForm()">Edit Resume</button>
+                <button type="button" class="control-btn" id="download-alert-pdf-btn" onclick="downloadAlertPDF()">Download Preview as PDF</button>
+            </div>
+        </div>
+
+        <div id="preview-page">
+            <h2>YOUR RESUME PREVIEW (Design blended from photos)</h2>
+            <div id="resume-container">
+                </div>
+            <div class="controls-row">
+                <button type="button" class="control-btn" onclick="returnToForm()">Edit Resume</button>
+                <button type="button" class="control-btn" id="download-pdf-btn" onclick="downloadResumePDF()">Download in PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set up global options for download PDF functionality
+        let download_pdf_btn;
+        let download_alert_pdf_btn;
+
+        // --- Photo Handling & Preview ---
+        const inpPhoto = document.getElementById('inp-photo');
+        const photoPlaceholder = document.getElementById('photo-placeholder');
+        const photoPreview = document.getElementById('photo-preview');
+
+        inpPhoto.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    photoPreview.src = event.target.result;
+                    photoPreview.style.display = 'block';
+                    photoPlaceholder.style.display = 'none';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // --- Templates and Logic for Adding Dynamic Points ---
+        function getSkillTemplate() {
+            return `
+                <div class="dynamic-item-group form-group">
+                    <label>Skill Point</label>
+                    <input type="text" name="skill[]" placeholder="e.g. Branding & Visual Identity" required>
+                    <span class="dynamic-item-remove" onclick="this.parentElement.remove()">X</span>
+                </div>`;
+        }
+
+        function getLanguageTemplate() {
+            return `
+                <div class="dynamic-item-group form-group">
+                    <label>Language Name</label>
+                    <input type="text" name="lang_name[]" placeholder="e.g. English" required>
+                    <label style="margin-top: 10px;">Proficiency Percentage (1-100)</label>
+                    <input type="number" name="lang_prof[]" min="1" max="100" placeholder="100" required>
+                    <span class="dynamic-item-remove" onclick="this.parentElement.remove()">X</span>
+                </div>`;
+        }
+
+        function getWorkExperienceTemplate() {
+            return `
+                <div class="dynamic-item-group form-group">
+                    <label>Job Title</label>
+                    <input type="text" name="work_title[]" placeholder="e.g. Graphic Designer" required>
+                    <input type="text" name="work_company[]" placeholder="e.g. Studio Shodwe" style="margin-top: 10px;" required>
+                    <input type="text" name="work_date[]" placeholder="e.g. (2000-2004)" style="margin-top: 10px;" required>
+                    <textarea name="work_desc[]" placeholder="Descriptions (bullet per line)" style="margin-top: 10px;"></textarea>
+                    <span class="dynamic-item-remove" onclick="this.parentElement.remove()">X</span>
+                </div>`;
+        }
+
+        function getEducationTemplate() {
+            return `
+                <div class="dynamic-item-group form-group">
+                    <label>Degree/Course Name</label>
+                    <input type="text" name="edu_degree[]" placeholder="e.g. Bachelor of Visual Communication Design" required>
+                    <input type="text" name="edu_place[]" placeholder="e.g. Rimberio University" style="margin-top: 10px;" required>
+                    <input type="text" name="edu_date[]" placeholder="e.g. (2000-2004)" style="margin-top: 10px;" required>
+                    <label class="percentage-subheading">Percentage Subheading Input</label>
+                    <input type="text" name="edu_percentage[]" placeholder="Percentage/Grade" style="margin-top: 2px;">
+                    <span class="dynamic-item-remove" onclick="this.parentElement.remove()">X</span>
+                </div>`;
+        }
+
+        function addSkillPoint() { document.getElementById('skills-container').insertAdjacentHTML('beforeend', getSkillTemplate()); }
+        function addLanguagePoint() { document.getElementById('languages-container').insertAdjacentHTML('beforeend', getLanguageTemplate()); }
+        function addWorkExperiencePoint() { document.getElementById('work-experience-container').insertAdjacentHTML('beforeend', getWorkExperienceTemplate()); }
+        function addEducationPoint() { document.getElementById('education-container').insertAdjacentHTML('beforeend', getEducationTemplate()); }
+
+        // Start with mandatory single cards initially for Experience and Education
+        addEducationPoint();
+
+        // --- Preview Resume Function: Gathers all filled details and renders professional detailed preview ---
+        function previewResume() {
+            const form = document.getElementById('resume-form');
+            const previewPage = document.getElementById('preview-page');
+            const formPage = document.getElementById('form-page');
+            const alertPage = document.getElementById('alert-page');
+            const missingFieldsList = document.getElementById('missing-fields-list');
+
+            const missingFields = [];
+
+            // 1. Mandatory Form Fields check
+            const reqInputs = form.querySelectorAll('input[required], textarea[required]');
+            reqInputs.forEach(input => {
+                if (!input.value.trim()) {
+                    input.style.borderColor = 'red';
+                    // Collect field name for the list
+                    const labelName = input.id.replace('inp-', '').replace('-', ' ');
+                    if (!missingFields.includes(labelName)) missingFields.push(labelName);
+                } else {
+                    input.style.borderColor = '#ccc';
+                }
+            });
+
+            // 2. Photo mandatory check
+            if (photoPreview.src === "") {
+                missingFields.push("Profile Photo");
+                document.getElementById('photo-preview-box').style.borderColor = 'red';
+            } else {
+                document.getElementById('photo-preview-box').style.borderColor = 'white';
+            }
+
+            // 3. Dynamic Section check: Skills and Education required as per form prompt
+            if (document.getElementById('skills-container').children.length === 0) {
+                missingFields.push("Skills (At least 1 Point)");
+            }
+            if (document.getElementById('education-container').children.length === 0) {
+                missingFields.push("Education (At least 1 Card)");
+            }
+
+
+            // Render preview or Red Alert based on missing details
+            if (missingFields.length > 0) {
+                // Show red alert page with detailed list
+                missingFieldsList.innerHTML = ''; // Clear previous list
+                missingFields.forEach(field => {
+                    const li = document.createElement('li');
+                    li.textContent = field;
+                    missingFieldsList.appendChild(li);
+                });
+                formPage.style.display = 'none';
+                alertPage.style.display = 'block';
+                return; // halt preview rendering
+            }
+
+            // 4. All fields present: render professional dynamic replica based on blended photo designs
+            alertPage.style.display = 'none';
+            formPage.style.display = 'none';
+            previewPage.style.display = 'block';
+
+            const resumeContainer = document.getElementById('resume-container');
+            resumeContainer.innerHTML = ''; // Clear previous preview content
+
+            const formData = new FormData(form);
+
+            // --- Header: Photo, Name, Title ---
+            const headerBlock = document.createElement('div');
+            headerBlock.className = 'p-name-block';
+            headerBlock.innerHTML = `
+                <div class="p-photo-block">
+                    <img class="p-photo" src="${photoPreview.src}" alt="Your Photo">
+                </div>
+                <div class="p-name-title">
+                    <div class="p-name">${formData.get('name')}</div>
+                    <div class="p-title">${formData.get('title')}</div>
+                </div>
+            `;
+            resumeContainer.appendChild(headerBlock);
+
+            // --- Main Contents: Replicate 2 column layout from photos ---
+            const leftCol = document.createElement('div');
+            leftCol.className = 'p-left-col';
+            const rightCol = document.createElement('div');
+            rightCol.className = 'p-right-col';
+
+            // -- Left Column Contents --
+            // Contact block with icons replicate design
+            const contactHeading = document.createElement('h3');
+            contactHeading.className = 'p-section-heading';
+            contactHeading.textContent = 'CONTACT';
+            leftCol.appendChild(contactHeading);
+
+            const phoneItem = document.createElement('div');
+            phoneItem.className = 'p-contact-item';
+            phoneItem.innerHTML = `<i class="fas fa-phone p-contact-icon"></i> ${formData.get('phone')}`;
+            leftCol.appendChild(phoneItem);
+
+            const emailItem = document.createElement('div');
+            emailItem.className = 'p-contact-item';
+            emailItem.innerHTML = `<i class="fas fa-envelope p-contact-icon"></i> ${formData.get('email')}`;
+            leftCol.appendChild(emailItem);
+
+            const locationItem = document.createElement('div');
+            locationItem.className = 'p-contact-item';
+            locationItem.innerHTML = `<i class="fas fa-map-marker-alt p-contact-icon"></i> ${formData.get('location')}`;
+            leftCol.appendChild(locationItem);
+
+            // Languages: proficiency bars replicate professional design
+            const langHeading = document.createElement('h3');
+            langHeading.className = 'p-section-heading';
+            langHeading.textContent = 'LANGUAGES';
+            leftCol.appendChild(langHeading);
+
+            const langNames = formData.getAll('lang_name[]');
+            const langProfs = formData.getAll('lang_prof[]');
+            
+            langNames.forEach((name, index) => {
+                const prof = langProfs[index];
+                const langPoint = document.createElement('div');
+                langPoint.className = 'p-language-point';
+                langPoint.innerHTML = `
+                    <div class="p-lang-name">• ${name}</div>
+                    <div class="p-prof-bar-container">
+                        <div class="p-prof-bar" style="width: ${prof}%;"></div>
+                    </div>
+                `;
+                leftCol.appendChild(langPoint);
+            });
+
+            // -- Right Column Contents --
+            // Profile text
+            const profileHeading = document.createElement('h3');
+            profileHeading.className = 'p-section-heading';
+            profileHeading.style.marginTop = '0'; // Adjusted due to structure replicate
+            profileHeading.textContent = 'PROFILE';
+            rightCol.appendChild(profileHeading);
+
+            const profileText = document.createElement('p');
+            profileText.className = 'p-text-block';
+            profileText.textContent = formData.get('about');
+            rightCol.appendChild(profileText);
+
+            // Education Cards with subdirectory subdirectory replicate percentage subdirectory
+            const eduHeading = document.createElement('h3');
+            eduHeading.className = 'p-section-heading';
+            eduHeading.textContent = 'EDUCATION';
+            rightCol.appendChild(eduHeading);
+
+            const eduDegrees = formData.getAll('edu_degree[]');
+            const eduPlaces = formData.getAll('edu_place[]');
+            const eduDates = formData.getAll('edu_date[]');
+            const eduPercentages = formData.getAll('edu_percentage[]');
+
+            eduDegrees.forEach((degree, index) => {
+                const place = eduPlaces[index];
+                const date = eduDates[index];
+                const percentage = eduPercentages[index];
+                
+                const eduCard = document.createElement('div');
+                eduCard.className = 'p-edu-card';
+                eduCard.innerHTML = `
+                    <div class="p-card-heading">• ${degree}</div>
+                    <div class="p-card-place-date">${place} ${date}</div>
+                    ${percentage ? `<div class="percentage-subheading" style="margin-left: 20px;">${percentage}</div>` : ''}
+                `;
+                rightCol.appendChild(eduCard);
+            });
+
+            // Skills list replica
+            const skillHeading = document.createElement('h3');
+            skillHeading.className = 'p-section-heading';
+            skillHeading.textContent = 'SKILLS';
+            rightCol.appendChild(skillHeading);
+
+            const skills = formData.getAll('skill[]');
+            const skillGrid = document.createElement('p');
+            skillGrid.className = 'p-card-point';
+            skills.forEach((skill, index) => {
+                skillGrid.innerHTML += `• ${skill}&nbsp;&nbsp;&nbsp;`;
+                if ((index + 1) % 2 === 0) skillGrid.innerHTML += '<br>';
+            });
+            rightCol.appendChild(skillGrid);
+
+            // Work Experience Cards with replica dynamic replicated dynamic bullets logic
+            const workHeading = document.createElement('h3');
+            workHeading.className = 'p-section-heading';
+            workHeading.textContent = 'WORK EXPERIENCE';
+            rightCol.appendChild(workHeading);
+
+            const workTitles = formData.getAll('work_title[]');
+            const workCompanies = formData.getAll('work_company[]');
+            const workDates = formData.getAll('work_date[]');
+            const workDescs = formData.getAll('work_desc[]');
+
+            workTitles.forEach((title, index) => {
+                const company = workCompanies[index];
+                const date = workDates[index];
+                const descText = workDescs[index];
+
+                const workCard = document.createElement('div');
+                workCard.className = 'p-work-card';
+                workCard.innerHTML = `
+                    <div class="p-card-heading">• ${title}</div>
+                    <div class="p-card-place-date">${company} ${date}</div>
+                `;
+                const pointsList = document.createElement('ul');
+                pointsList.className = 'p-edu-card-points';
+                descText.split('\n').forEach(line => {
+                    if (line.trim()) {
+                        const li = document.createElement('li');
+                        li.textContent = line.trim();
+                        pointsList.appendChild(li);
+                    }
+                });
+                workCard.appendChild(pointsList);
+                rightCol.appendChild(workCard);
+            });
+
+            // GathersColumns
+            resumeContainer.appendChild(leftCol);
+            resumeContainer.appendChild(rightCol);
+
+        }
+
+        // --- Common Edit and View functions ---
+        function returnToForm() {
+            document.getElementById('form-page').style.display = 'block';
+            document.getElementById('alert-page').style.display = 'none';
+            document.getElementById('preview-page').style.display = 'none';
+        }
+
+        // --- PDF Generation Functions: Using html2pdf library from CDN link ---
+        function downloadResumePDF() {
+            const element = document.getElementById('preview-page'); // download dynamic replica preview container
+            const opt = {
+                margin:       [0, 0, 0, 0], // Replicate photo designs with zero margin on direct replica download
+                filename:     'My_Resume.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true }, // CORS needed for file images on some hosts
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            // Using standard library from standard approach
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function downloadAlertPDF() {
+            // download form Red Alert Missing fields detailed page view structure
+            const element = document.getElementById('alert-page');
+            const opt = {
+                margin:       [0.5, 0.5, 0.5, 0.5], // Standard page margin for this view
+                filename:     'Missing_Resume_Details.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(element).save();
+        }
+
+    </script>
+</body>
+</html>
