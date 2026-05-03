@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Resume Builder</title>
+    <style>
+        /* ==============================
+           GENERAL STYLES & RESET
+           ============================== */
+        :root {
+            --primary-blue: #1C2A39; /* Matched blue-grey from image sidebar */
+            --teal-accent: #1abc9c; /* Matched teal heading underlines */
+            --text-grey: #666;
+            --missing-red: #ff0000;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            padding: 20px;
+            color: #333;
+        }
+
+        button {
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        /* ==============================
+           FORM & CONTROL PANEL STYLES
+           ============================== */
+        #form-view {
+            max-width: 1000px;
+            margin: 0 auto 30px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        #form-view h1 {
+            text-align: center;
+            color: var(--primary-blue);
+            margin-bottom: 20px;
+        }
+
+        .form-section {
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #fafafa;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+
+        .form-header h2 {
+            margin: 0;
+            color: var(--primary-blue);
+            font-size: 1.25rem;
+        }
+
+        .add-btn {
+            background-color: var(--primary-blue);
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .add-btn:hover { background-color: #2c3e50; }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+        }
+
+        /* Photo upload preview style in form */
+        #photo-form-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #ddd;
+            background-size: cover;
+            background-position: center;
+            display: none; /* Hidden until upload */
+            margin-top: 10px;
+            border: 3px solid white;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+
+        /* Red Alert States for Missing Details */
+        .error-message {
+            color: var(--missing-red);
+            font-size: 13px;
+            margin-top: -10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            display: none; /* Initially hidden */
+        }
+
+        #global-error-alert {
+            display: none;
+            background-color: #fff0f0;
+            color: var(--missing-red);
+            border: 2px solid var(--missing-red);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .missing-section {
+            border: 2px solid var(--missing-red) !important;
+            background-color: #fffafa !important;
+        }
+
+        /* Dynamic point list styles */
+        .dynamic-point {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .remove-point-btn {
+            background-color: #e74c3c;
+            color: white;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .remove-point-btn:hover { background-color: #c0392b; }
+
+        /* Submit Container */
+        .submit-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        #preview-btn {
+            background-color: var(--primary-blue);
+            color: white;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        #preview-btn:hover { background-color: #2c3e50; }
+
+        /* Post-Preview controls */
+        #control-panel {
+            display: none;
+            max-width: 1000px;
+            margin: 0 auto 30px auto;
+            text-align: right;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        #edit-btn {
+            background-color: #e67e22;
+            color: white;
+            padding: 10px 24px;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+        #edit-btn:hover { background-color: #d35400; }
+
+        #download-btn {
+            background-color: var(--teal-accent);
+            color: white;
+            padding: 10px 24px;
+            font-weight: bold;
+        }
+        #download-btn:hover { background-color: #16a085; }
+
+        /* ==============================
+           RESUME PREVIEW STYLES
+           ============================== */
+        #resume-preview {
+            display: none;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            width: 210mm; /* A4 width */
+            height: 297mm; /* A4 height */
+            margin: 0 auto;
+        }
+
+        /* The actual layout mirroring image_13.png */
+        #resume-inner {
+            display: flex;
+            height: 100%;
+        }
+
+        /* Left Column (Blue) */
+        .left-col {
+            width: 32%;
+            background-color: var(--primary-blue);
+            color: white;
+            padding: 40px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #preview-photo {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 30px auto;
+            border: 6px solid rgba(255, 255, 255, 0.2);
+            display: block;
+        }
+
+        .left-col h3 {
+            color: white;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid var(--teal-accent);
+            padding-bottom: 10px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        .left-col ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 0.95rem;
+            line-height: 2;
+        }
+
+        .left-col ul li::before {
+            content: '●';
+            color: white;
+            font-size: 0.8rem;
+            margin-right: 12px;
+            opacity: 0.8;
+        }
+
+        .contact-entry {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .contact-entry .icon {
+            color: white;
+            font-size: 1.1rem;
+            opacity: 0.8;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Right Column (White) */
+        .right-col {
+            width: 68%;
+            background-color: white;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        #header-box {
+            background-color: #f4f7f6; /* Matching light grey from image */
+            padding: 30px 50px;
+            margin-top: 40px;
+            box-sizing: border-box;
+        }
+
+        #preview-name {
+            font-size: 2.2rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin: 0;
+            letter-spacing: 1px;
+        }
+
+        #preview-title {
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            color: var(--text-grey);
+            margin: 5px 0 0 0;
+            letter-spacing: 1px;
+            font-weight: 300;
+        }
+
+        #content-body {
+            padding: 40px 50px;
+        }
+
+        .content-section {
+            margin-bottom: 30px;
+        }
+
+        #content-body h2 {
+            color: var(--primary-blue);
+            text-transform: uppercase;
+            font-size: 1.25rem;
+            font-weight: 700;
+            border-bottom: 2px solid var(--teal-accent);
+            padding-bottom: 10px;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        #preview-about {
+            color: var(--text-grey);
+            line-height: 1.7;
+            font-size: 0.95rem;
+        }
+
+        .entry-block {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .entry-date {
+            align-self: flex-end;
+            font-size: 0.9rem;
+            color: var(--text-grey);
+            font-weight: 400;
+            text-align: right;
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+
+        .entry-title {
+            color: #333;
+            font-weight: bold;
+            font-size: 1rem;
+            margin-right: 120px; /* Space for date */
+        }
+
+        .right-col ul {
+            list-style: disc;
+            padding-left: 20px;
+            margin: 10px 0 0 0;
+            font-size: 0.9rem;
+            color: var(--text-grey);
+            line-height: 1.6;
+        }
+
+        .cert-list li {
+            margin-bottom: 12px;
+        }
+
+        /* --- PDF Print View --- */
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+
+            #form-view, #control-panel, h1 {
+                display: none !important;
+            }
+
+            #resume-preview {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                margin: 0;
+                border-radius: 0;
+                box-shadow: none;
+                /* Forces background colors to print */
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important; 
+            }
+
+            #resume-inner {
+                width: 100%;
+                height: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1 style="text-align:center; color: #1C2A39; margin-bottom: 20px;">Professional Resume Builder</h1>
+
+<div id="control-panel">
+    <button id="edit-btn" onclick="editForm()">Edit</button>
+    <button id="download-btn" onclick="downloadPdf()">Download PDF</button>
+</div>
+
+<div id="form-view">
+    
+    <div id="global-error-alert">A red alert! Some mandatory details are missing. Please check the form and fill in all required fields.</div>
+
+    <div class="form-section mandatory-section">
+        <div class="form-header">
+            <h2>Mandatory Details *</h2>
+        </div>
+        <p class="error-message">Mandatory section requires all fields (Photo, About, and at least Phone/Email).</p>
+
+        <div class="form-group">
+            <label for="form-photo">Upload Profile Photo *</label>
+            <input type="file" id="form-photo" accept="image/*" required>
+            <div id="photo-form-preview"></div>
+        </div>
+        <div class="form-group">
+            <label for="form-name">Full Name *</label>
+            <input type="text" id="form-name" placeholder="Daniel Gallego" required>
+        </div>
+        <div class="form-group">
+            <label for="form-title">Job Title *</label>
+            <input type="text" id="form-title" placeholder="Graphic Designer" required>
+        </div>
+        <div class="form-group">
+            <label for="form-about">About Me paragraph *</label>
+            <textarea id="form-about" rows="4" placeholder="Briefly describe your professional background and skills..." required></textarea>
+        </div>
+        <div class="form-group">
+            <label for="form-phone">Mobile No *</label>
+            <input type="tel" id="form-phone" placeholder="+123-456-7890" required>
+        </div>
+        <div class="form-group">
+            <label for="form-email">Email *</label>
+            <input type="email" id="form-email" placeholder="hello@reallygreatsite.com" required>
+        </div>
+        <div class="form-group">
+            <label for="form-location">Location (City, Country)</label>
+            <input type="text" id="form-location" placeholder="Jakarta, Indonesia">
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="form-header">
+            <h2>SKILLS</h2>
+            <button class="add-btn" onclick="addPoint('form-skills-container')">+</button>
+        </div>
+        <p class="error-message skill-error">Skills section requires at least one point.</p>
+        <div id="form-skills-container">
+            <div class="form-group dynamic-point"><input type="text" placeholder="Adobe Photoshop"><button class="remove-point-btn" onclick="removePoint(this)">-</button></div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="form-header">
+            <h2>LANGUAGE</h2>
+            <button class="add-btn" onclick="addPoint('form-language-container')">+</button>
+        </div>
+        <p class="error-message language-error">Language section requires at least one point.</p>
+        <div id="form-language-container">
+            <div class="form-group dynamic-point"><input type="text" placeholder="English (Native)"><button class="remove-point-btn" onclick="removePoint(this)">-</button></div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="form-header">
+            <h2>WORK EXPERIENCE</h2>
+            <button class="add-btn" onclick="addExperienceBlock()">+</button>
+        </div>
+        <p class="error-message experience-error">Please complete at least one experience entry with Date and Title.</p>
+        <div id="form-experience-container">
+            </div>
+    </div>
+
+    <div class="form-section">
+        <div class="form-header">
+            <h2>EDUCATION</h2>
+            <button class="add-btn" onclick="addEducationBlock()">+</button>
+        </div>
+        <p class="error-message education-error">Please complete at least one education entry with Date and Degree/Institution.</p>
+        <div id="form-education-container">
+            </div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-header">
+            <h2>CERTIFICATION</h2>
+            <button class="add-point-btn" id="add-certificate-btn" onclick="addPoint('form-certificate-container')">+</button>
+        </div>
+        <p class="error-message certification-error">Certification section requires at least one point.</p>
+        <div id="form-certificate-container">
+            <div class="form-group dynamic-point"><input type="text" placeholder="Adobe Certified Professional... (2018)"><button class="remove-point-btn" onclick="removePoint(this)">-</button></div>
+        </div>
+    </div>
+
+    <div class="submit-container">
+        <button type="button" id="preview-btn" onclick="validateAndPreview()">Preview Resume</button>
+    </div>
+
+</div> <div id="resume-preview">
+    <div id="resume-inner">
+        <div class="left-col">
+            <img src="" id="preview-photo" alt="Profile Photo">
+
+            <h3>Skills</h3>
+            <ul id="preview-skills-list"></ul>
+
+            <h3>Language</h3>
+            <ul id="preview-language-list"></ul>
+
+            <h3>Contact</h3>
+            <div id="preview-contact-phone" class="contact-entry"><span class="icon">&#9743;</span><span></span></div>
+            <div id="preview-contact-email" class="contact-entry"><span class="icon">&#9993;</span><span></span></div>
+            <div id="preview-contact-location" class="contact-entry"><span class="icon">&#128205;</span><span></span></div>
+        </div>
+
+        <div class="right-col">
+            <div id="header-box">
+                <h1 id="preview-name">DANIEL GALLEGO</h1>
+                <p id="preview-title">Graphic Designer</p>
+            </div>
+
+            <div id="content-body">
+                <div class="content-section">
+                    <h2>About Me</h2>
+                    <p id="preview-about">Brief description text...</p>
+                </div>
+
+                <div class="content-section">
+                    <h2>Work Experience</h2>
+                    <div id="preview-experience-list"></div>
+                </div>
+
+                <div class="content-section">
+                    <h2>Education</h2>
+                    <div id="preview-education-list"></div>
+                </div>
+
+                <div class="content-section">
+                    <h2>Certification</h2>
+                    <ul id="preview-certificate-list" class="cert-list"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Templates for complex dynamic fields ---
+    const expBlockTemplate = `
+        <div class="dynamic-entry-block form-group" style="border: 1px dashed #ccc; padding: 15px; margin-bottom: 15px;">
+            <div style="text-align: right; margin-bottom: 10px;"><button class="remove-point-btn" onclick="removePoint(this)">Remove</button></div>
+            <label>Date (e.g., 2022 - Present)</label>
+            <input type="text" class="exp-date-form" placeholder="2022 - Present">
+            <label>Title | Company (e.g., Lead Graphic Designer | Ingoude Company)</label>
+            <input type="text" class="exp-title-form" placeholder="Lead Graphic Designer | Ingoude Company">
+            <label>Key Responsibilities (one per line)</label>
+            <textarea class="exp-desc-form" rows="3" placeholder="Created over 100+ branded assets..."></textarea>
+        </div>
+    `;
+
+    const eduBlockTemplate = `
+        <div class="dynamic-entry-block form-group" style="border: 1px dashed #ccc; padding: 15px; margin-bottom: 15px;">
+            <div style="text-align: right; margin-bottom: 10px;"><button class="remove-point-btn" onclick="removePoint(this)">Remove</button></div>
+            <label>Date (e.g., 2012 - 2015)</label>
+            <input type="text" class="edu-date-form" placeholder="2012 - 2015">
+            <label>Degree / Field (e.g., Secondary Education)</label>
+            <input type="text" class="edu-degree-form" placeholder="Secondary Education">
+            <label>Institution (e.g., Really Great High School)</label>
+            <input type="text" class="edu-uni-form" placeholder="Really Great High School">
+        </div>
+    `;
+
+    // --- Dynamic Field Handling ---
+    function addPoint(containerId) {
+        const container = document.getElementById(containerId);
+        const div = document.createElement('div');
+        div.className = 'form-group dynamic-point';
+        div.innerHTML = `<input type="text" placeholder="Entry"><button class="remove-point-btn" onclick="removePoint(this)">-</button>`;
+        container.appendChild(div);
+    }
+
+    function addExperienceBlock() {
+        const container = document.getElementById('form-experience-container');
+        container.insertAdjacentHTML('beforeend', expBlockTemplate);
+    }
+
+    function addEducationBlock() {
+        const container = document.getElementById('form-education-container');
+        container.insertAdjacentHTML('beforeend', eduBlockTemplate);
+    }
+
+    function removePoint(button) {
+        button.closest('.form-group').remove();
+    }
+
+    // --- Add initial blocks ---
+    addExperienceBlock();
+    addEducationBlock();
+
+    // --- Photo handling ---
+    const photoInput = document.getElementById('form-photo');
+    photoInput.addEventListener('change', function() {
+        const previewDiv = document.getElementById('photo-form-preview');
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewDiv.style.backgroundImage = `url(${e.target.result})`;
+                previewDiv.style.display = 'block';
+            }
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+
+    // --- Core Logic: Validate, Preview, Edit, Download ---
+
+    function validateAndPreview() {
+        // Reset previous alerts
+        document.getElementById('global-error-alert').style.display = 'none';
+        const sections = document.querySelectorAll('.form-section');
+        sections.forEach(s => s.classList.remove('missing-section'));
+        const messages = document.querySelectorAll('.error-message');
+        messages.forEach(m => m.style.display = 'none');
+        const inputs = document.querySelectorAll('#form-view input[required], #form-view textarea[required]');
+        inputs.forEach(i => i.style.borderColor = '#ccc');
+
+        let isValid = true;
+
+        // 1. Validate Mandatory Single Details
+        let mandatoryValid = true;
+        
+        // Check Photo separately
+        const photoUploaded = document.getElementById('form-photo').files.length > 0;
+        if (!photoUploaded) mandatoryValid = false;
+
+        // Check required texts
+        inputs.forEach(input => {
+            if (!input.value.trim()) {
+                input.style.borderColor = var(--missing-red);
+                mandatoryValid = false;
+            }
+        });
+
+        if (!mandatoryValid) {
+            document.querySelector('.mandatory-section').classList.add('missing-section');
+            document.querySelector('.mandatory-section .error-message').style.display = 'block';
+            isValid = false;
+        }
+
+        // 2. Validate Dynamic Lists (at least one filled entry)
+        function checkDynamicPoints(containerId, errorClass) {
+            const container = document.getElementById(containerId);
+            const listInputs = container.querySelectorAll('.dynamic-point input');
+            let filledCount = 0;
+            listInputs.forEach(input => {
+                if (input.value.trim()) filledCount++;
+            });
+            if (filledCount === 0) {
+                container.closest('.form-section').classList.add('missing-section');
+                document.querySelector(errorClass).style.display = 'block';
+                return false;
+            }
+            return true;
+        }
+        
+        if (!checkDynamicPoints('form-skills-container', '.skill-error')) isValid = false;
+        if (!checkDynamicPoints('form-language-container', '.language-error')) isValid = false;
+        if (!checkDynamicPoints('form-certificate-container', '.certification-error')) isValid = false;
+
+        // 3. Validate Complex Blocks (Experience/Education)
+        function checkBlocks(containerId, errorClass, requiredSelectors) {
+            const container = document.getElementById(containerId);
+            const blocks = container.querySelectorAll('.dynamic-entry-block');
+            let completelyFilledBlockFound = false;
+
+            blocks.forEach(block => {
+                let blockComplete = true;
+                requiredSelectors.forEach(selector => {
+                    const input = block.querySelector(selector);
+                    if (!input.value.trim()) {
+                        input.style.borderColor = var(--missing-red);
+                        blockComplete = false;
+                    } else {
+                        input.style.borderColor = '#ccc';
+                    }
+                });
+                if (blockComplete) completelyFilledBlockFound = true;
+            });
+
+            if (!completelyFilledBlockFound) {
+                container.closest('.form-section').classList.add('missing-section');
+                document.querySelector(errorClass).style.display = 'block';
+                return false;
+            }
+            return true;
+        }
+
+        if (!checkBlocks('form-experience-container', '.experience-error', ['.exp-date-form', '.exp-title-form'])) isValid = false;
+        if (!checkBlocks('form-education-container', '.education-error', ['.edu-date-form', '.edu-degree-form'])) isValid = false;
+
+        // --- Final Check ---
+        if (!isValid) {
+            document.getElementById('global-error-alert').style.display = 'block';
+            window.scrollTo(0, 0); // Scroll to top for error
+            return;
+        }
+
+        // Transfer data to preview page
+        preparePreview();
+    }
+
+    function preparePreview() {
+        // --- Single Details Transfer ---
+        // Photo
+        const formPhoto = document.getElementById('form-photo');
+        const previewPhotoImg = document.getElementById('preview-photo');
+        if (formPhoto.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) { previewPhotoImg.src = e.target.result; }
+            reader.readAsDataURL(formPhoto.files[0]);
+        }
+
+        // Name, Title, About
+        document.getElementById('preview-name').innerText = document.getElementById('form-name').value || 'YOUR NAME';
+        document.getElementById('preview-title').innerText = document.getElementById('form-title').value || 'Graphic Designer';
+        document.getElementById('preview-about').innerText = document.getElementById('form-about').value;
+
+        // Contact
+        document.getElementById('preview-contact-phone').querySelector('span').innerText = document.getElementById('form-phone').value;
+        document.getElementById('preview-contact-email').querySelector('span').innerText = document.getElementById('form-email').value;
+        document.getElementById('preview-contact-location').querySelector('span').innerText = document.getElementById('form-location').value;
+
+        // --- Dynamic Lists Transfer (Single Input Lists) ---
+        function transferList(formContainerId, previewListId) {
+            const formContainer = document.getElementById(formContainerId);
+            const previewList = document.getElementById(previewListId);
+            previewList.innerHTML = '';
+            const inputs = formContainer.querySelectorAll('.dynamic-point input');
+            inputs.forEach(input => {
+                const text = input.value.trim();
+                if (text) {
+                    const li = document.createElement('li');
+                    li.innerText = text;
+                    previewList.appendChild(li);
+                }
+            });
+        }
+        transferList('form-skills-container', 'preview-skills-list');
+        transferList('form-language-container', 'preview-language-list');
+        transferList('form-certificate-container', 'preview-certificate-list');
+
+        // --- Dynamic Experience Blocks Transfer ---
+        const previewExperienceList = document.getElementById('preview-experience-list');
+        previewExperienceList.innerHTML = ''; // Clear
+        const expBlocks = document.querySelectorAll('#form-experience-container .dynamic-entry-block');
+        expBlocks.forEach(block => {
+            const date = block.querySelector('.exp-date-form').value.trim();
+            const title = block.querySelector('.exp-title-form').value.trim();
+            const desc = block.querySelector('.exp-desc-form').value.trim();
+
+            if (date && title) {
+                // Parse multiline description into bullet points
+                let descPointsHtml = '';
+                if (desc) {
+                    const points = desc.split('\n').filter(p => p.trim() !== '');
+                    if (points.length) {
+                        descPointsHtml = '<ul>' + points.map(p => `<li>${p}</li>`).join('') + '</ul>';
+                    }
+                }
+
+                // Create block structure mirroring format in image_13.png
+                const entryHtml = `
+                    <div class="entry-block">
+                        <div class="entry-date">${date}</div>
+                        <div class="entry-title">${title}</div>
+                        ${descPointsHtml}
+                    </div>
+                `;
+                previewExperienceList.insertAdjacentHTML('beforeend', entryHtml);
+            }
+        });
+
+        // --- Dynamic Education Blocks Transfer ---
+        const previewEducationList = document.getElementById('preview-education-list');
+        previewEducationList.innerHTML = ''; // Clear
+        const eduBlocks = document.querySelectorAll('#form-education-container .dynamic-entry-block');
+        eduBlocks.forEach(block => {
+            const date = block.querySelector('.edu-date-form').value.trim();
+            const degree = block.querySelector('.edu-degree-form').value.trim();
+            const uni = block.querySelector('.edu-uni-form').value.trim();
+
+            if (date && degree) {
+                const uniHtml = uni ? `<p>${uni}</p>` : '';
+                // Simple format based on image_13.png for Edu
+                const entryHtml = `
+                    <div class="entry-block">
+                        <div class="entry-date">${date}</div>
+                        <div class="entry-title">${degree}</div>
+                        ${uniHtml}
+                    </div>
+                `;
+                previewEducationList.insertAdjacentHTML('beforeend', entryHtml);
+            }
+        });
+
+        // Show Preview and Post-Preview controls
+        document.getElementById('form-view').style.display = 'none';
+        document.getElementById('resume-preview').style.display = 'block';
+        document.getElementById('control-panel').style.display = 'block';
+        window.scrollTo(0, 0); // Scroll to top of preview
+    }
+
+    function editForm() {
+        // Switch back to form view
+        document.getElementById('form-view').style.display = 'block';
+        document.getElementById('resume-preview').style.display = 'none';
+        document.getElementById('control-panel').style.display = 'none';
+        window.scrollTo(0, 0);
+    }
+
+    function downloadPdf() {
+        // Trigger browser's print dialog, which allows saving as PDF
+        alert('Opening your browser’s print dialog. Please select "Save as PDF" to download your professional resume.');
+        window.print();
+    }
+</script>
+
+</body>
+</html>

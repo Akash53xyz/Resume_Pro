@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS Resume Scanner & Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        // Set the worker source for PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg-color: #f1f5f9;
+            --surface: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #22c55e;
+            --warning: #eab308;
+            --danger: #ef4444;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 { margin-bottom: 5px; }
+        p.subtitle { color: var(--text-muted); margin-bottom: 30px; text-align: center; }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .panel {
+            background: var(--surface);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        h2 { margin-top: 0; border-bottom: 2px solid var(--border); padding-bottom: 10px; font-size: 1.2rem;}
+
+        .upload-area {
+            border: 2px dashed var(--primary);
+            padding: 30px;
+            text-align: center;
+            border-radius: 8px;
+            background-color: #eff6ff;
+            margin-bottom: 15px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn {
+            background-color: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            display: inline-block;
+            transition: background 0.2s;
+        }
+
+        .upload-btn:hover { background-color: #1d4ed8; }
+
+        .file-name {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* ATS Score UI */
+        .ats-results {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: none;
+        }
+
+        .score-circle {
+            font-size: 3rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .feedback-list { margin: 0; padding-left: 20px; color: var(--text-main); line-height: 1.6;}
+        .feedback-list li { margin-bottom: 8px; }
+        
+        .loading {
+            text-align: center;
+            font-weight: bold;
+            color: var(--primary);
+            display: none;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Resume ATS Scanner</h1>
+    <p class="subtitle">Upload your resume (PDF or TXT) to see how an Applicant Tracking System reads it.</p>
+
+    <div class="container">
+        
+        <div class="panel">
+            <h2>Upload Resume</h2>
+            <div class="upload-area">
+                <label for="resume-upload" class="upload-btn">Choose File (PDF or TXT)</label>
+                <input type="file" id="resume-upload" accept=".pdf, .txt">
+                <div class="file-name" id="file-name">No file chosen</div>
+            </div>
+            <div class="loading" id="loading-indicator">Reading document... Please wait.</div>
+
+            <div class="ats-results" id="ats-panel">
+                <h2>ATS Match Score</h2>
+                <div class="score-circle" id="score-display">0/100</div>
+                <h3>Analysis Feedback:</h3>
+                <ul class="feedback-list" id="feedback-list"></ul>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('resume-upload');
+        const fileNameDisplay = document.getElementById('file-name');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const atsPanel = document.getElementById('ats-panel');
+
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            fileNameDisplay.innerText = `Selected: ${file.name}`;
+            atsPanel.style.display = 'none';
+            loadingIndicator.style.display = 'block';
+
+            try {
+                let extractedText = '';
+
+                if (file.type === 'application/pdf') {
+                    extractedText = await extractTextFromPDF(file);
+                } else if (file.type === 'text/plain') {
+                    extractedText = await file.text();
+                } else {
+                    alert('Please upload a valid PDF or TXT file.');
+                    loadingIndicator.style.display = 'none';
+                    return;
+                }
+
+                // Give UI a tiny moment to breathe before heavy regex scanning
+                setTimeout(() => {
+                    scoreUploadedText(extractedText);
+                    loadingIndicator.style.display = 'none';
+                }, 500);
+
+            } catch (error) {
+                console.error("Error reading file:", error);
+                alert("An error occurred while reading the file. See console for details.");
+                loadingIndicator.style.display = 'none';
+            }
+        });
+
+        // Function to extract text from PDF using PDF.js
+        async function extractTextFromPDF(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let fullText = '';
+            
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                fullText += pageText + '\n';
+            }
+            return fullText;
+        }
+
+        // Logic to scan the raw extracted text and score it
+        function scoreUploadedText(text) {
+            let score = 0;
+            let feedback = [];
+            
+            // Normalize text for easier scanning
+            const normalizedText = text.replace(/\s+/g, ' ');
+
+            // 1. Contact Information (25 points)
+            if (/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(text)) {
+                score += 10;
+            } else {
+                feedback.push("❌ <b>Email missing:</b> Could not find a valid email address.");
+            }
+            
+            if (/\+?\d{1,4}?[-.\s]?\(?\d{2,3}?\)?[-.\s]?\d{3,4}[-.\s]?\d{4}/.test(text)) {
+                score += 10;
+            } else {
+                feedback.push("❌ <b>Phone missing:</b> Could not find a valid phone number.");
+            }
+            
+            if (/linkedin\.com/i.test(text)) {
+                score += 5;
+            } else {
+                feedback.push("⚠️ <b>LinkedIn missing:</b> Adding a LinkedIn URL improves ATS parsing.");
+            }
+
+            // 2. Sections/Formatting (30 points)
+            if (/experience|work history|employment/i.test(text)) {
+                score += 10;
+            } else {
+                feedback.push("❌ <b>Experience Section:</b> Could not detect an 'Experience' or 'Work History' header.");
+            }
+
+            if (/education|academic/i.test(text)) {
+                score += 10;
+            } else {
+                feedback.push("❌ <b>Education Section:</b> Could not detect an 'Education' header.");
+            }
+
+            if (/skills|technologies|core competencies/i.test(text)) {
+                score += 10;
+            } else {
+                feedback.push("⚠️ <b>Skills Section:</b> Could not detect a dedicated 'Skills' header.");
+            }
+
+            // 3. Dates and Quantifiable Metrics (25 points)
+            const yearMatches = text.match(/\b20\d{2}\b|\b19\d{2}\b/g);
+            if (yearMatches && yearMatches.length >= 2) {
+                score += 15;
+            } else {
+                feedback.push("❌ <b>Dates missing:</b> Ensure you are using clear years (e.g., 2021-2023) for your experience and education.");
+            }
+
+            // Look for numbers/percentages (evidence of measuring success)
+            if (/\d+%|\$\d+|\d+ percent/i.test(text)) {
+                score += 10;
+            } else {
+                feedback.push("⚠️ <b>Quantifiable Metrics:</b> Try adding numbers or percentages (e.g., 'increased sales by 15%') to strengthen your achievements.");
+            }
+
+            // 4. Length and Action Verbs (20 points)
+            const wordCount = normalizedText.split(' ').length;
+            if (wordCount > 200 && wordCount < 1000) {
+                score += 10;
+            } else if (wordCount <= 200) {
+                feedback.push("⚠️ <b>Word Count:</b> Your resume seems very short. Ensure you have enough detail.");
+                score += 5;
+            } else {
+                feedback.push("⚠️ <b>Word Count:</b> Your resume is quite long. Consider condensing it to the most relevant information.");
+                score += 5;
+            }
+
+            const actionVerbs = ['managed', 'developed', 'led', 'created', 'designed', 'improved', 'increased', 'coordinated', 'implemented'];
+            const foundVerbs = actionVerbs.filter(verb => new RegExp('\\b' + verb + '\\b', 'i').test(text));
+            
+            if (foundVerbs.length >= 3) {
+                score += 10;
+            } else {
+                feedback.push("⚠️ <b>Action Verbs:</b> Use more strong action verbs (e.g., Managed, Developed, Led, Created).");
+                score += 5;
+            }
+
+            // Render Results
+            atsPanel.style.display = 'block';
+            const scoreDisplay = document.getElementById('score-display');
+            const feedbackList = document.getElementById('feedback-list');
+
+            scoreDisplay.innerText = `${score}/100`;
+
+            if (score >= 80) scoreDisplay.style.color = 'var(--success)';
+            else if (score >= 50) scoreDisplay.style.color = 'var(--warning)';
+            else scoreDisplay.style.color = 'var(--danger)';
+
+            feedbackList.innerHTML = '';
+            if (feedback.length === 0) {
+                feedbackList.innerHTML = '<li style="color: var(--success);">✅ Excellent! Your resume contains all standard ATS checkpoints.</li>';
+            } else {
+                feedback.forEach(item => {
+                    const li = document.createElement('li');
+                    li.innerHTML = item;
+                    feedbackList.appendChild(li);
+                });
+            }
+        }
+    </script>
+</body>
+</html>

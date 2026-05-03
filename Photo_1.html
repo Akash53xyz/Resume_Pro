@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Resume Builder</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+
+        h1, h2, h3 {
+            margin: 0 0 10px 0;
+            font-weight: 600;
+        }
+
+        button {
+            cursor: pointer;
+            border-radius: 4px;
+            border: none;
+            padding: 8px 16px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #a71d2a;
+        }
+
+        .btn-add {
+            background-color: #28a745;
+            color: white;
+            font-size: 1.2rem;
+            padding: 0 6px;
+            margin-left: 10px;
+        }
+
+        .btn-add:hover {
+            background-color: #1e7e34;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Form Styling */
+        #form-view {
+            padding-bottom: 20px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .dynamic-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .dynamic-item input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+
+        #skills-container, #experience-container, #education-container, #certificates-container, #language-container {
+            border: 1px solid #eee;
+            padding: 10px;
+            background-color: #fafafa;
+        }
+
+        .dynamic-entry {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #fdfdfd;
+            border-radius: 4px;
+        }
+
+        .dynamic-entry .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        #photo-upload-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #photo-preview-form {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #ddd;
+            overflow: hidden;
+            display: none;
+        }
+
+        #photo-preview-form img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Resume Preview Styling (mirrors image_11.png) */
+        #resume-preview {
+            display: none;
+            width: 210mm; /* A4 width */
+            height: 297mm; /* A4 height - but let it scroll for view */
+            margin: auto;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        #resume-main {
+            display: flex;
+            height: 100%;
+        }
+
+        /* Colors from original */
+        #left-sidebar {
+            width: 32%;
+            background-color: #384d5f; /* Deep blue-grey */
+            color: white;
+            padding: 40px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #right-content {
+            width: 68%;
+            background-color: white;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Left Side Content */
+        #profile-photo-container {
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            margin-bottom: 30px;
+            background-color: #eee;
+        }
+
+        #profile-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .sidebar-section {
+            margin-bottom: 30px;
+        }
+
+        #left-sidebar h2 {
+            font-size: 1.3rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        #skills-list, #language-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            line-height: 1.8;
+            font-size: 0.95rem;
+        }
+
+        #contact-details {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            font-size: 0.95rem;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .contact-item .icon {
+            font-size: 1.1rem;
+        }
+
+        /* Right Side Content */
+        #header-box {
+            background-color: #e0e3e6; /* Light grey */
+            padding: 30px 40px;
+            margin-top: 40px;
+            box-sizing: border-box;
+        }
+
+        #name {
+            font-size: 2.2rem;
+            color: #384d5f;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        #title {
+            font-size: 1.2rem;
+            color: #636d77;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        #main-body {
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+
+        .main-section {
+            grid-column: span 2;
+        }
+
+        .main-section.col {
+            grid-column: span 1;
+        }
+
+        #right-content h2 {
+            font-size: 1.3rem;
+            color: #384d5f;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+
+        #about-text {
+            color: #636d77;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .entry {
+            margin-bottom: 20px;
+        }
+
+        .entry-title {
+            color: #333;
+            font-weight: bold;
+            font-size: 1.05rem;
+        }
+
+        .entry-meta {
+            color: #636d77;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .entry-details, .certificate-list li {
+            list-style: disc;
+            margin-left: 20px;
+            color: #636d77;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .certificate-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* Extra details marker circle from original */
+        .certificate-list li::before {
+            content: '●';
+            color: #384d5f;
+            font-size: 0.7rem;
+            margin-right: 10px;
+            position: relative;
+            top: -2px;
+        }
+
+        /* Validation style */
+        .missing-detail {
+            border: 2px solid red;
+            box-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+            background-color: #fff0f0;
+        }
+
+        #preview-actions {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container" id="main-container">
+    <div id="form-view">
+        <h1 style="text-align: center;">Resume Builder</h1>
+        <p style="text-align: center; color: #666;">Fill in your details below to generate your professional resume.</p>
+        <hr>
+
+        <div class="form-section">
+            <h2>Photo</h2>
+            <div id="photo-upload-container">
+                <input type="file" id="photo-input" accept="image/*" onchange="previewImageForm(this)">
+                <div id="photo-preview-form"><img src="" alt="Preview"></div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-group">
+                <label for="f-name">Full Name</label>
+                <input type="text" id="f-name" required placeholder="Daniel Gallego">
+            </div>
+            <div class="form-group">
+                <label for="f-title">Job Title</label>
+                <input type="text" id="f-title" placeholder="Graphic Designer">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div class="form-group">
+                <label for="f-about">About Me</label>
+                <textarea id="f-about" rows="4" placeholder="I am a passionate and detail-oriented Graphic Designer with [X] years..."></textarea>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h2>Contact Details</h2>
+            <div class="form-group">
+                <label for="f-phone">Phone No</label>
+                <input type="tel" id="f-phone" placeholder="+123-456-7890">
+            </div>
+            <div class="form-group">
+                <label for="f-email">Email</label>
+                <input type="email" id="f-email" placeholder="hello@reallygreatsite.com">
+            </div>
+            <div class="form-group">
+                <label for="f-location">Location</label>
+                <input type="text" id="f-location" placeholder="Jakarta, Indonesia">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <h2>Skills</h2>
+                <button type="button" class="btn-add" onclick="addSkillItem()">+</button>
+            </div>
+            <div id="skills-container">
+                <div class="dynamic-item">
+                    <input type="text" placeholder="Adobe InDesign">
+                    <button type="button" class="btn-danger btn-sm" onclick="removeItem(this)">-</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <h2>Languages</h2>
+                <button type="button" class="btn-add" onclick="addLanguageItem()">+</button>
+            </div>
+            <div id="language-container">
+                <div class="dynamic-item">
+                    <input type="text" placeholder="English (Native)">
+                    <button type="button" class="btn-danger btn-sm" onclick="removeItem(this)">-</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <h2>Experience</h2>
+                <button type="button" class="btn-add" onclick="addExperienceEntry()">+</button>
+            </div>
+            <div id="experience-container">
+                <div class="dynamic-entry">
+                    <div class="form-group">
+                        <input type="text" placeholder="Job Title / Company" required class="exp-title">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" placeholder="Dates (e.g., Jan 2020 - Present)" class="exp-dates">
+                    </div>
+                    <div class="form-group">
+                        <textarea placeholder="Key Responsibilities / Achievements" class="exp-details"></textarea>
+                    </div>
+                    <button type="button" class="btn-danger btn-sm" onclick="removeEntry(this)">Remove</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <h2>Education</h2>
+                <button type="button" class="btn-add" onclick="addEducationEntry()">+</button>
+            </div>
+            <div id="education-container">
+                <div class="dynamic-entry">
+                    <div class="form-group">
+                        <input type="text" placeholder="Degree / University" required class="edu-title">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" placeholder="Dates (e.g., 20XX - 20XX)" class="edu-dates">
+                    </div>
+                    <div class="form-group">
+                        <textarea placeholder="Focus / Capstone Project Details" class="edu-details"></textarea>
+                    </div>
+                    <button type="button" class="btn-danger btn-sm" onclick="removeEntry(this)">Remove</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                <h2>Certificate</h2>
+                <button type="button" class="btn-add" onclick="addCertificateEntry()">+</button>
+            </div>
+            <div id="certificates-container">
+                <div class="dynamic-item">
+                    <input type="text" placeholder="Adobe Certified Professional... (20XX)">
+                    <button type="button" class="btn-danger btn-sm" onclick="removeItem(this)">-</button>
+                </div>
+            </div>
+        </div>
+
+        <button type="button" class="btn-primary" style="display: block; width: 100%; font-size: 1.1rem;" onclick="generateResumePreview()">Generate Resume</button>
+
+    </div> <div id="preview-actions" style="display: none;">
+        <button type="button" class="btn-primary" onclick="editResume()">Edit</button>
+        <button type="button" class="btn-add" onclick="downloadResumePdf()">Download PDF</button>
+    </div>
+</div> <div id="resume-preview">
+    <div id="resume-main">
+        <div id="left-sidebar">
+            <div id="profile-photo-container">
+                <img id="profile-photo" src="" alt="Profile Photo">
+            </div>
+
+            <div class="sidebar-section">
+                <h2>Skills</h2>
+                <ul id="skills-list"></ul>
+            </div>
+
+            <div class="sidebar-section">
+                <h2>Languages</h2>
+                <ul id="language-list"></ul>
+            </div>
+
+            <div class="sidebar-section">
+                <h2>Contact</h2>
+                <div id="contact-details"></div>
+            </div>
+        </div>
+
+        <div id="right-content">
+            <div id="header-box">
+                <h1 id="name">Daniel Gallego</h1>
+                <p id="title">Graphic Designer</p>
+            </div>
+
+            <div id="main-body">
+                <div class="main-section">
+                    <h2>About Me</h2>
+                    <p id="about-text"></p>
+                </div>
+
+                <div class="main-section">
+                    <h2>Experience</h2>
+                    <div id="experience-list"></div>
+                </div>
+
+                <div class="main-section col">
+                    <h2>Education</h2>
+                    <div id="education-list"></div>
+                </div>
+
+                <div class="main-section col">
+                    <h2>Certificate</h2>
+                    <ul class="certificate-list" id="certificate-list-output"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // --- Dynamic Form Functionality ---
+
+    // Generic list items (Skills, Languages)
+    function addGenericItem(containerId, placeholderText) {
+        const container = document.getElementById(containerId);
+        const div = document.createElement('div');
+        div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" placeholder="${placeholderText}">
+            <button type="button" class="btn-danger btn-sm" onclick="removeItem(this)">-</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function addSkillItem() { addGenericItem('skills-container', 'e.g., Responsive Design'); }
+    function addLanguageItem() { addGenericItem('language-container', 'e.g., French (Fluent)'); }
+    function addCertificateEntry() { addGenericItem('certificates-container', 'e.g., UI/UX Design Certification (20XX)'); }
+
+    function removeItem(button) {
+        button.parentNode.remove();
+    }
+
+    // Generic section entries (Experience, Education)
+    function addExperienceEntry() {
+        const container = document.getElementById('experience-container');
+        const div = document.createElement('div');
+        div.className = 'dynamic-entry';
+        div.innerHTML = `
+            <div class="form-group">
+                <input type="text" placeholder="Job Title / Company" required class="exp-title">
+            </div>
+            <div class="form-group">
+                <input type="text" placeholder="Dates (e.g., Jan 2020 - Present)" class="exp-dates">
+            </div>
+            <div class="form-group">
+                <textarea placeholder="Key Responsibilities / Achievements" class="exp-details"></textarea>
+            </div>
+            <button type="button" class="btn-danger btn-sm" onclick="removeEntry(this)">Remove</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function addEducationEntry() {
+        const container = document.getElementById('education-container');
+        const div = document.createElement('div');
+        div.className = 'dynamic-entry';
+        div.innerHTML = `
+            <div class="form-group">
+                <input type="text" placeholder="Degree / University" required class="edu-title">
+            </div>
+            <div class="form-group">
+                <input type="text" placeholder="Dates (e.g., 20XX - 20XX)" class="edu-dates">
+            </div>
+            <div class="form-group">
+                <textarea placeholder="Focus / Capstone Project Details" class="edu-details"></textarea>
+            </div>
+            <button type="button" class="btn-danger btn-sm" onclick="removeEntry(this)">Remove</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function removeEntry(button) {
+        button.parentNode.remove();
+    }
+
+    // --- Photo Preview ---
+    function previewImageForm(input) {
+        const previewDiv = document.getElementById('photo-preview-form');
+        const previewImg = previewDiv.querySelector('img');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                previewImg.setAttribute('src', e.target.result);
+                previewDiv.style.display = 'block';
+            }
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            previewImg.setAttribute('src', '');
+            previewDiv.style.display = 'none';
+        }
+    }
+
+    // --- Resume Preview and Generation ---
+
+    let currentPhotoUrl = null;
+
+    function generateResumePreview() {
+        // --- 1. Validate ---
+        const inputs = document.querySelectorAll('#form-view input[required], #form-view textarea[required]');
+        let isValid = true;
+
+        inputs.forEach(input => {
+            if (!input.value.trim()) {
+                input.classList.add('missing-detail');
+                isValid = false;
+            } else {
+                input.classList.remove('missing-detail');
+            }
+        });
+
+        // Specific checks for required photo
+        const photoInput = document.getElementById('photo-input');
+        if (!photoInput.files || !photoInput.files[0]) {
+            photoInput.classList.add('missing-detail');
+            isValid = false;
+        } else {
+            photoInput.classList.remove('missing-detail');
+        }
+
+        if (!isValid) {
+            alert("Please fill in all required fields (marked in red). A photo is also required.");
+            return;
+        }
+
+        // --- 2. Populate Preview Data ---
+
+        // Photo
+        const photoPreviewOutput = document.getElementById('profile-photo');
+        if (photoInput.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                photoPreviewOutput.src = e.target.result;
+            }
+            reader.readAsDataURL(photoInput.files[0]);
+        }
+
+        // Base details
+        document.getElementById('name').textContent = document.getElementById('f-name').value || "YOUR NAME";
+        document.getElementById('title').textContent = document.getElementById('f-title').value || "JOB TITLE";
+        document.getElementById('about-text').textContent = document.getElementById('f-about').value;
+
+        // Contact
+        const contactOutput = document.getElementById('contact-details');
+        contactOutput.innerHTML = ''; // Clear
+        const phone = document.getElementById('f-phone').value;
+        const email = document.getElementById('f-email').value;
+        const location = document.getElementById('f-location').value;
+        if (phone) contactOutput.innerHTML += `<div class="contact-item"><span class="icon">&#9743;</span><span>${phone}</span></div>`;
+        if (email) contactOutput.innerHTML += `<div class="contact-item"><span class="icon">&#9993;</span><span>${email}</span></div>`;
+        if (location) contactOutput.innerHTML += `<div class="contact-item"><span class="icon">&#128205;</span><span>${location}</span></div>`;
+
+        // Skills (List)
+        const skillsOutput = document.getElementById('skills-list');
+        skillsOutput.innerHTML = '';
+        const skillInputs = document.querySelectorAll('#skills-container input');
+        skillInputs.forEach(input => {
+            if (input.value) skillsOutput.innerHTML += `<li>${input.value}</li>`;
+        });
+
+        // Languages (List)
+        const languageOutput = document.getElementById('language-list');
+        languageOutput.innerHTML = '';
+        const languageInputs = document.querySelectorAll('#language-container input');
+        languageInputs.forEach(input => {
+            if (input.value) languageOutput.innerHTML += `<li>${input.value}</li>`;
+        });
+
+        // Experience
+        const expOutput = document.getElementById('experience-list');
+        expOutput.innerHTML = '';
+        const expEntries = document.querySelectorAll('#experience-container .dynamic-entry');
+        expEntries.forEach(entry => {
+            const title = entry.querySelector('.exp-title').value;
+            const dates = entry.querySelector('.exp-dates').value;
+            const details = entry.querySelector('.exp-details').value;
+            if (title || details) {
+                expOutput.innerHTML += `
+                    <div class="entry">
+                        <div class="entry-title">${title || "Job Title/Company"}</div>
+                        <div class="entry-meta">${dates || ""}</div>
+                        ${details ? `<ul class="entry-details">${details.split('\n').map(line => `<li>${line}</li>`).join('')}</ul>` : ""}
+                    </div>
+                `;
+            }
+        });
+
+        // Education
+        const eduOutput = document.getElementById('education-list');
+        eduOutput.innerHTML = '';
+        const eduEntries = document.querySelectorAll('#education-container .dynamic-entry');
+        eduEntries.forEach(entry => {
+            const title = entry.querySelector('.edu-title').value;
+            const dates = entry.querySelector('.edu-dates').value;
+            const details = entry.querySelector('.edu-details').value;
+            if (title || details) {
+                eduOutput.innerHTML += `
+                    <div class="entry">
+                        <div class="entry-title">${title || "Degree/University"}</div>
+                        <div class="entry-meta">${dates || ""}</div>
+                        ${details ? `<ul class="entry-details">${details.split('\n').map(line => `<li>${line}</li>`).join('')}</ul>` : ""}
+                    </div>
+                `;
+            }
+        });
+
+        // Certificates
+        const certOutput = document.getElementById('certificate-list-output');
+        certOutput.innerHTML = '';
+        const certInputs = document.querySelectorAll('#certificates-container input');
+        certInputs.forEach(input => {
+            if (input.value) certOutput.innerHTML += `<li>${input.value}</li>`;
+        });
+
+        // --- 3. Switch View ---
+        document.getElementById('form-view').style.display = 'none';
+        document.getElementById('main-container').style.display = 'none'; // Hide form outer container
+        document.getElementById('resume-preview').style.display = 'block';
+        document.getElementById('preview-actions').style.display = 'block';
+    }
+
+    // --- Edit Mode ---
+    function editResume() {
+        document.getElementById('resume-preview').style.display = 'none';
+        document.getElementById('preview-actions').style.display = 'none';
+        document.getElementById('form-view').style.display = 'block';
+        document.getElementById('main-container').style.display = 'block';
+    }
+   // --- PDF Download Simulation ---
+    function downloadResumePdf() {
+        alert("Preparing your resume... \n (PDF generation simulation)");
+        // In a real application, you would use a library like html2pdf.js here.
+        // For this task, we provide a basic alert.
+    }
+
+</script>
+
+</body>
+</html>

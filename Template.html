@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="English">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Template </title>
+    
+    <style>
+        /* --- 1. CSS (Design) --- */
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+        }
+
+        /* Menu Button Style */
+        .menu-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001; /* Sabse upar rahega */
+            background: #222;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: 0.3s;
+        }
+
+        .menu-btn:hover { background: #444; }
+
+        /* Sidebar Menu (Initially hidden using transform) */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -280px; /* Screen ke bahar */
+            width: 250px;
+            height: 100%;
+            background: #1a1a1a;
+            color: white;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            padding: 80px 15px 20px;
+            z-index: 1000;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.3);
+        }
+
+        /* Jab 'show' class add hogi tab menu dikhega */
+        .sidebar.show {
+            left: 0;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin: 15px 0;
+        }
+
+        .sidebar ul li a {
+            color: #ddd;
+            text-decoration: none;
+            font-size: 20px;
+            display: block;
+            padding: 10px;
+            border-radius: 4px;
+            transition: 0.3s;
+        }
+
+        .sidebar ul li a:hover {
+            background: #333;
+            color: #fff;
+            padding-left: 20px;
+        }
+
+        /* Gallery Layout */
+        .container {
+            padding: 100px 20px 50px;
+            text-align: center;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            max-width: 1200px;
+            margin: 30px auto;
+        }
+
+        /* Photo Card Style */
+        .photo-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            text-decoration: none;
+            color: #333;
+            transition: transform 0.3s ease;
+        }
+
+        .photo-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .photo-card h3 {
+            margin: 15px 0;
+            font-size: 18px;
+        }
+
+        /* Overlay to close menu when clicking outside */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        
+        .overlay.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <button class="menu-btn" onclick="toggleMenu()" id="btnText">☰ Menu</button>
+
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+    <div class="sidebar" id="sidebar">
+        <ul>
+              <li><a href="index.html">Dashboard</a></li>
+                <li><a href="#">Templates</a></li>
+                <li><a href="#">ATS Guide</a></li>
+                <li><a href="#">Pricing</a></li>
+                <li><a href="#">Support</a></li>
+        </ul>
+    </div>
+
+    <div class="container">
+        <h1>Resume Template</h1>
+        
+        <div class="gallery">
+            <h2>Select a Photo</h2>
+
+  <a href="photo1.html">
+    <img src="images/img1.jpg">
+  </a>
+
+  <a href="photo2.html">
+    <img src="images/img2.jpg">
+  </a>
+
+  <a href="photo3.html">
+    <img src="images/img3.jpg">
+  </a>
+            
+   <a href="photo4.html">
+    <img src="images/img4.jpg">
+  </a>
+
+  <a href="photo5.html">
+    <img src="images/img5.jpg">
+  </a>
+
+  <a href="photo6.html">
+    <img src="images/img6.jpg">
+  </a>
+            
+  <a href="photo7.html">
+    <img src="images/img7.jpg">
+  </a>
+
+  <a href="photo8.html">
+    <img src="images/img8.jpg">
+  </a>
+
+  <a href="photo9.html">
+    <img src="images/img9.jpg">
+  </a>
+            
+  <a href="photo10.html">
+    <img src="images/img10.jpg">
+  </a>
+
+  <a href="photo11.html">
+    <img src="images/img11.jpg">
+  </a>
+
+  <a href="photo12.html">
+    <img src="images/img12.jpg">
+  </a>
+        </div>
+    </div>
+
+    <script>
+        function toggleMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const btnText = document.getElementById('btnText');
+
+            // 'show' class ko add/remove karega
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('active');
+
+            // Button ka text change karne ke liye
+            if (sidebar.classList.contains('show')) {
+                btnText.innerHTML = "✖ Close";
+            } else {
+                btnText.innerHTML = "☰ Menu";
+            }
+        }
+    </script>
+
+</body>
+</html>
+
