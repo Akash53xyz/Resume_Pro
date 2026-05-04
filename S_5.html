@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Resume Builder</title>
+    <style>
+        :root {
+            --primary-color: #0a1c3e;
+            --text-color: #333;
+            --light-text: #fff;
+            --bg-color: #f7f9fc;
+            --error-color: #e74c3c;
+            --form-border-color: #ccc;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* Form Styles */
+        #form-section {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        h1, h2, h3 {
+            color: var(--primary-color);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="date"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--form-border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+
+        input.invalid,
+        textarea.invalid,
+        .custom-file-input.invalid {
+            border: 1px solid var(--error-color) !important;
+            background-color: #fceae9;
+        }
+
+        #red-alert {
+            display: none;
+            color: var(--error-color);
+            background-color: #fceae9;
+            border: 1px solid var(--error-color);
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        fieldset {
+            border: 1px solid var(--form-border-color);
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            position: relative;
+        }
+
+        legend {
+            font-weight: bold;
+            color: var(--primary-color);
+            padding: 0 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Extra points + styling */
+        .add-btn, .remove-btn {
+            background-color: var(--primary-color);
+            color: var(--light-text);
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 10px;
+        }
+
+        .add-btn:hover, .remove-btn:hover {
+            background-color: #1c2c4e;
+        }
+
+        .remove-btn {
+            background-color: var(--error-color);
+            position: absolute;
+            top: -15px;
+            right: -15px;
+        }
+        
+        .dynamic-entry {
+            margin-bottom: 10px;
+            border-bottom: 1px dashed var(--form-border-color);
+            padding-bottom: 10px;
+            position: relative;
+        }
+
+        .custom-file-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--form-border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            display: inline-block;
+            cursor: pointer;
+            background: #fff;
+        }
+        
+        #photo-preview-form {
+            max-width: 100px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .btn-group {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        button.main-btn {
+            background-color: var(--primary-color);
+            color: var(--light-text);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 16px;
+            margin: 0 10px;
+        }
+
+        button.main-btn:hover {
+            background-color: #1c2c4e;
+        }
+
+        /* Preview Styles - Mimicking image_1.png layout */
+        #preview-section {
+            display: none;
+            background: #fff;
+            padding: 20mm; /* A4 aspect margin in realistic view */
+            width: 210mm; /* A4 width */
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+
+        .p-resume-container {
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .p-header {
+            text-align: center;
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .p-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .p-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin: 5px 0;
+            text-transform: uppercase;
+        }
+        
+        .p-photo-container {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid var(--primary-color);
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .p-photo-container img {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+        }
+
+        .p-contact-line {
+            font-size: 12px;
+            color: #555;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            width: 100%;
+            margin: 5px 0;
+        }
+        
+        .p-separator {
+            color: #ccc;
+        }
+
+        .p-contact-line span {
+            margin: 0;
+        }
+
+        .p-full-width-line {
+            width: 100%;
+            height: 3px;
+            background-color: var(--primary-color);
+            margin: 10px 0 20px 0;
+        }
+
+        .p-section-heading {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-top: 25px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        .p-content {
+            font-size: 12px;
+            color: #555;
+            text-align: justify;
+        }
+        
+        .p-content p {
+            margin: 0 0 10px 0;
+        }
+
+        .p-experience-entry, .p-education-entry {
+            margin-bottom: 15px;
+        }
+
+        .p-entry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 5px;
+        }
+
+        .p-entry-title {
+            font-weight: 700;
+            color: #333;
+        }
+
+        .p-entry-subtitle {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .p-entry-date {
+            font-size: 11px;
+            color: #777;
+            text-align: right;
+            flex-shrink: 0;
+            margin-left: 15px;
+        }
+
+        .p-bullets {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin: 5px 0 0 0;
+        }
+
+        .p-bullets li {
+            margin-bottom: 3px;
+        }
+
+        .p-percentage-subheading {
+            font-style: italic;
+            color: #777;
+            font-size: 11px;
+        }
+
+        .p-skill-line {
+            margin-bottom: 5px;
+        }
+
+        .p-skill-line strong {
+            font-weight: 700;
+            color: #333;
+        }
+
+        /* Other list (Achievements, Languages) styling */
+        .p-list {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        .p-list li {
+            margin-bottom: 3px;
+        }
+
+        /* Generic generic points list for other types that might be added to heading with + */
+        .p-generic-points {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        .p-generic-points li {
+            margin-bottom: 3px;
+        }
+
+        /* Print styles */
+        @media print {
+            body {
+                background: #fff;
+                padding: 0;
+                margin: 0;
+            }
+            .container {
+                max-width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            #form-section, .btn-group {
+                display: none;
+            }
+            #preview-section {
+                display: block !important;
+                padding: 0;
+                width: 100%;
+                margin: 0;
+                box-shadow: none;
+            }
+            .p-resume-container {
+                padding: 20mm;
+            }
+        }
+
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container">
+        <div id="form-section">
+            <h1>Marceline Anderson - Create Resume</h1>
+            <p>Fill all details for your resume. Required fields are marked with (R).</p>
+            
+            <div id="red-alert">Please fill in all the required details (highlighted in red) to preview.</div>
+            
+            <form id="resume-form">
+                
+                <fieldset>
+                    <legend>Basic Info</legend>
+                    <div class="form-group">
+                        <label for="full-name">Full Name (R)</label>
+                        <input type="text" id="full-name" class="required-field" placeholder="e.g., Marceline Anderson">
+                    </div>
+                    <div class="form-group">
+                        <label for="job-title">Professional Title (R)</label>
+                        <input type="text" id="job-title" class="required-field" placeholder="e.g., Graphic Designer">
+                    </div>
+                    <div class="form-group">
+                        <label>Photo (R)</label>
+                        <input type="file" id="photo-upload" accept="image/*" class="custom-file-input required-field">
+                        <img id="photo-preview-form" src="" alt="Photo Preview">
+                    </div>
+                </fieldset>
+
+                <fieldset id="contact-section">
+                    <legend>Contact Details</legend>
+                    <div class="form-group">
+                        <label for="contact-loc">Location (R)</label>
+                        <input type="text" id="contact-loc" class="required-field" placeholder="e.g., 123 Anywhere St., Any City">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-phone">Mobile No (R)</label>
+                        <input type="text" id="contact-phone" class="required-field" placeholder="e.g., +123-456-7890">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact-email">Email (R)</label>
+                        <input type="email" id="contact-email" class="required-field" placeholder="e.g., hello@reallygreatsite.com">
+                    </div>
+                </fieldset>
+
+                <fieldset id="about-section">
+                    <legend>Profile Summary</legend>
+                    <div class="form-group">
+                        <label for="about">About (R)</label>
+                        <textarea id="about" class="required-field" placeholder="Write a short summary about yourself..."></textarea>
+                    </div>
+                </fieldset>
+
+                <fieldset id="experience-container">
+                    <legend>Work Experience <button type="button" class="add-btn" id="add-experience">+</button></legend>
+                    <div id="experience-list">
+                        </div>
+                </fieldset>
+
+                <fieldset id="education-container">
+                    <legend>Education <button type="button" class="add-btn" id="add-education">+</button></legend>
+                    <div id="education-list">
+                        </div>
+                </fieldset>
+
+                <fieldset id="skills-container">
+                    <legend>Skills <button type="button" class="add-btn" id="add-skills">+</button></legend>
+                    <div id="skills-list">
+                        </div>
+                </fieldset>
+                
+                <fieldset id="languages-container">
+                    <legend>Languages <button type="button" class="add-btn" id="add-languages">+</button></legend>
+                    <div id="languages-list">
+                        </div>
+                </fieldset>
+                
+                <fieldset id="achievements-container">
+                    <legend>Achievements <button type="button" class="add-btn" id="add-achievements">+</button></legend>
+                    <div id="achievements-list">
+                        </div>
+                </fieldset>
+
+                <div class="btn-group">
+                    <button type="submit" class="main-btn" id="preview-btn">Preview Resume</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="preview-section">
+            <div class="btn-group no-print">
+                <button type="button" class="main-btn" id="edit-btn">Edit</button>
+                <button type="button" class="main-btn" id="download-btn">Download PDF</button>
+            </div>
+            
+            <div id="resume-preview-view" class="p-resume-container">
+                <div class="p-header">
+                    <div class="p-photo-container">
+                        <img id="p-photo" src="" alt="Photo">
+                    </div>
+                    <h1 id="p-name">MARCELINE ANDERSON</h1>
+                    <h2 id="p-title">GRAPHIC DESIGNER</h2>
+                </div>
+                
+                <div class="p-contact-line">
+                    <span id="p-location">123 Anywhere St., Any City</span>
+                    <span class="p-separator">|</span>
+                    <span id="p-phone">+123-456-7890</span>
+                    <span class="p-separator">|</span>
+                    <span id="p-email">hello@reallygreatsite.com</span>
+                </div>
+
+                <div class="p-full-width-line"></div>
+
+                <div class="p-section">
+                    <h3 class="p-section-heading">PROFILE SUMMARY</h3>
+                    <div class="p-content" id="p-about">
+                        Creative and detail-oriented Graphic Designer with a passion for clean visual storytelling and effective brand communication...
+                    </div>
+                </div>
+
+                <div class="p-section">
+                    <h3 class="p-section-heading">EXPERIENCE</h3>
+                    <div class="p-content" id="p-experience">
+                        </div>
+                </div>
+
+                <div class="p-section">
+                    <h3 class="p-section-heading">EDUCATION</h3>
+                    <div class="p-content" id="p-education">
+                        </div>
+                </div>
+
+                <div class="p-section">
+                    <h3 class="p-section-heading">SKILLS</h3>
+                    <div class="p-content" id="p-skills">
+                        </div>
+                </div>
+                
+                <div id="p-languages-section" class="p-section" style="display: none;">
+                    <h3 class="p-section-heading">LANGUAGES</h3>
+                    <div class="p-content">
+                        <ul id="p-languages" class="p-list">
+                            </ul>
+                    </div>
+                </div>
+                
+                <div id="p-achievements-section" class="p-section" style="display: none;">
+                    <h3 class="p-section-heading">ACHIEVEMENTS</h3>
+                    <div class="p-content">
+                        <ul id="p-achievements" class="p-list">
+                            </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+        const formView = document.getElementById('form-section');
+        const previewView = document.getElementById('preview-section');
+        const resumeForm = document.getElementById('resume-form');
+        const photoUpload = document.getElementById('photo-upload');
+        const photoPreviewForm = document.getElementById('photo-preview-form');
+        const redAlert = document.getElementById('red-alert');
+        
+        let photoBase64 = "";
+
+        // --- Core Utility Functions ---
+
+        // Display photo thumbnail on form
+        photoUpload.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    photoPreviewForm.src = e.target.result;
+                    photoPreviewForm.style.display = 'block';
+                    photoBase64 = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            } else {
+                photoPreviewForm.style.display = 'none';
+                photoBase64 = "";
+            }
+        });
+
+        // Add dynamic section on heading click
+        function setupAddPoints(sectionContainerId, listId, type) {
+            const addButton = document.getElementById(`add-${sectionContainerId.split('-')[0]}`);
+            const list = document.getElementById(listId);
+            
+            addButton.addEventListener('click', function() {
+                addPointsEntry(list, type);
+            });
+        }
+        
+        // Setup initial default entries for required sections
+        window.addEventListener('load', function() {
+            addPointsEntry(document.getElementById('experience-list'), 'experience');
+            addPointsEntry(document.getElementById('education-list'), 'education');
+            addPointsEntry(document.getElementById('skills-list'), 'skills');
+            // addPointsEntry(document.getElementById('languages-list'), 'languages');
+            // addPointsEntry(document.getElementById('achievements-list'), 'achievements');
+        });
+        
+        // Initial setup for add buttons
+        setupAddPoints('experience-container', 'experience-list', 'experience');
+        setupAddPoints('education-container', 'education-list', 'education');
+        setupAddPoints('skills-container', 'skills-list', 'skills');
+        setupAddPoints('languages-container', 'languages-list', 'languages');
+        setupAddPoints('achievements-container', 'achievements-list', 'achievements');
+        
+        // Remove an entry
+        function removePointsEntry(button) {
+            button.closest('.dynamic-entry').remove();
+        }
+
+        // Add an entry (work experience, education block, skill line, language/achievement point)
+        function addPointsEntry(list, type) {
+            let htmlHTML = "";
+            const entryDiv = document.createElement('div');
+            entryDiv.className = `dynamic-entry form-group`;
+            
+            const removeButtonHTML = `<button type="button" class="remove-btn" onclick="removePointsEntry(this)">&times;</button>`;
+        switch (type) {
+                case 'experience':
+                    htmlHTML = `
+                        ${removeButtonHTML}
+                        <div class="form-group">
+                            <label>Job Title (R)</label>
+                            <input type="text" class="exp-title required-field" placeholder="e.g., Senior Graphic Designer">
+                        </div>
+                        <div class="form-group">
+                            <label>Company/Client (R)</label>
+                            <input type="text" class="exp-company required-field" placeholder="e.g., Studio Shodwe">
+                        </div>
+                        <div class="form-group">
+                            <label>Dates (Start - End or 'Present') (R)</label>
+                            <input type="text" class="exp-date required-field" placeholder="e.g., 2021 - Present">
+                        </div>
+                        <div class="form-group">
+                            <label>Responsibilities/Achievements (Bullets, one per line)</label>
+                            <textarea class="exp-points" placeholder="Write responsibilities one per line..."></textarea>
+                        </div>
+                    `;
+                    break;
+                case 'education':
+                    htmlHTML = `
+                        ${removeButtonHTML}
+                        <div class="form-group">
+                            <label>Degree (R)</label>
+                            <input type="text" class="edu-degree required-field" placeholder="e.g., Bachelor of Design in Visual Communication">
+                        </div>
+                        <div class="form-group">
+                            <label>University (R)</label>
+                            <input type="text" class="edu-university required-field" placeholder="e.g., Rimberio University">
+                        </div>
+                        <div class="form-group">
+                            <label>Year (R)</label>
+                            <input type="text" class="edu-year required-field" placeholder="e.g., 2018">
+                        </div>
+                        <div class="form-group p-percentage-subheading">
+                            <label>Percentage/Grade subheading (optional)</label>
+                            <input type="text" class="edu-grade" placeholder="e.g., GPA 3.8/4.0">
+                        </div>
+                    `;
+                    break;
+                case 'skills':
+                    htmlHTML = `
+                        ${removeButtonHTML}
+                        <div class="form-group">
+                            <label>Skill Category (e.g., Design Tools, Specialties) (R)</label>
+                            <input type="text" class="skill-title required-field" placeholder="e.g., Design Tools">
+                        </div>
+                        <div class="form-group">
+                            <label>Skill Values (Comma separated) (R)</label>
+                            <textarea class="skill-values required-field" placeholder="e.g., Adobe Illustrator, Photoshop, Canva..."></textarea>
+                        </div>
+                    `;
+                    break;
+                case 'languages':
+                    htmlHTML = `
+                        ${removeButtonHTML}
+                        <div class="form-group">
+                            <label>Language Point (R)</label>
+                            <input type="text" class="point required-field" placeholder="e.g., Winner - “Young Designer Award 2022”">
+                        </div>
+                    `;
+                    break;
+                case 'achievements':
+                    htmlHTML = `
+                        ${removeButtonHTML}
+                        <div class="form-group">
+                            <label>Achievement Point (R)</label>
+                            <input type="text" class="point required-field" placeholder="e.g., Winner - “Young Designer Award 2022”">
+                        </div>
+                    `;
+                    break;
+            }
+            entryDiv.innerHTML = htmlHTML;
+            list.appendChild(entryDiv);
+        }
+
+        // --- Core Application Logic ---
+
+        // Function to process all comma separated fields and create lists of items
+        function processListItems(rawText) {
+            if (!rawText) return [];
+            return rawText.split('\n').filter(line => line.trim() !== '');
+        }
+
+        function processCommaSeparated(rawText) {
+            if (!rawText) return [];
+            return rawText.split(',').map(item => item.trim()).filter(item => item !== '');
+        }
+
+        // Submit form handler
+        resumeForm.addEventListener('submit', function(event) {
+            event.preventDefault(); // prevent actual submission
+            
+            // Validate required fields
+            const requiredFields = document.querySelectorAll('.required-field');
+            let isValid = true;
+            
+            // Basic required inputs
+            requiredFields.forEach(field => {
+                if (!field.value.trim() && field.id !== 'photo-upload') {
+                    isValid = false;
+                    field.classList.add('invalid');
+                } else {
+                    field.classList.remove('invalid');
+                }
+            });
+            
+            // Photo validation - simple check for presence of file
+            if (!photoBase64) {
+                isValid = false;
+                photoUpload.classList.add('invalid');
+            } else {
+                photoUpload.classList.remove('invalid');
+            }
+            
+            // Dynamic required inputs - need special handling because they can be removed
+            const dynamicLists = ['experience-list', 'education-list', 'skills-list', 'languages-list', 'achievements-list'];
+            dynamicLists.forEach(listId => {
+                const list = document.getElementById(listId);
+                const inputs = list.querySelectorAll('.required-field');
+                inputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        isValid = false;
+                        input.classList.add('invalid');
+                    } else {
+                        input.classList.remove('invalid');
+                    }
+                });
+            });
+
+            if (!isValid) {
+                redAlert.style.display = 'block';
+                window.scrollTo(0, 0); // scroll to alert
+                return;
+            }
+            
+            redAlert.style.display = 'none';
+
+            // Populate preview with extracted data
+            
+            // Photo & Header
+            document.getElementById('p-photo').src = photoBase64;
+            document.getElementById('p-name').textContent = document.getElementById('full-name').value;
+            document.getElementById('p-title').textContent = document.getElementById('job-title').value;
+            
+            // Contact
+            document.getElementById('p-location').textContent = document.getElementById('contact-loc').value;
+            document.getElementById('p-phone').textContent = document.getElementById('contact-phone').value;
+            document.getElementById('p-email').textContent = document.getElementById('contact-email').value;
+            
+            // About
+            document.getElementById('p-about').textContent = document.getElementById('about').value;
+
+            // Experience - process entries
+            const pExperienceContainer = document.getElementById('p-experience');
+            pExperienceContainer.innerHTML = '';
+            const expEntries = document.getElementById('experience-list').querySelectorAll('.dynamic-entry');
+            
+            expEntries.forEach(entry => {
+                const title = entry.querySelector('.exp-title').value;
+                const company = entry.querySelector('.exp-company').value;
+                const date = entry.querySelector('.exp-date').value;
+                const points = processListItems(entry.querySelector('.exp-points').value);
+                
+                const expDiv = document.createElement('div');
+                expDiv.className = 'p-experience-entry';
+                
+                let bulletsHTML = '';
+                if (points.length > 0) {
+                    bulletsHTML += `<ul class="p-bullets">`;
+                    points.forEach(point => {
+                        bulletsHTML += `<li>${point}</li>`;
+                    });
+                    bulletsHTML += `</ul>`;
+                }
+
+                expDiv.innerHTML = `
+                    <div class="p-entry-header">
+                        <div>
+                            <div class="p-entry-title">${title}</div>
+                            <div class="p-entry-subtitle">${company}</div>
+                        </div>
+                        <div class="p-entry-date">${date}</div>
+                    </div>
+                    ${bulletsHTML}
+                `;
+                pExperienceContainer.appendChild(expDiv);
+            });
+
+            // Education - process entries
+            const pEducationContainer = document.getElementById('p-education');
+            pEducationContainer.innerHTML = '';
+            const eduEntries = document.getElementById('education-list').querySelectorAll('.dynamic-entry');
+            
+            eduEntries.forEach(entry => {
+                const degree = entry.querySelector('.edu-degree').value;
+                const university = entry.querySelector('.edu-university').value;
+                const year = entry.querySelector('.edu-year').value;
+                const grade = entry.querySelector('.edu-grade').value;
+                
+                const eduDiv = document.createElement('div');
+                eduDiv.className = 'p-education-entry';
+                
+                let gradeHTML = '';
+                if (grade) {
+                    gradeHTML += `<div class="p-percentage-subheading">Percentage/Grade: <span style="font-weight:600; color: #333;">${grade} grade subheading</span></div>`;
+                }
+
+                eduDiv.innerHTML = `
+                    <div class="p-entry-header">
+                        <div>
+                            <div class="p-entry-title">${degree}</div>
+                            <div class="p-entry-subtitle">${university}</div>
+                            ${gradeHTML}
+                        </div>
+                        <div class="p-entry-date">${year}</div>
+                    </div>
+                `;
+                pEducationContainer.appendChild(eduDiv);
+            });
+
+            // Skills - process comma separated skill categories
+            const pSkillsContainer = document.getElementById('p-skills');
+            pSkillsContainer.innerHTML = '';
+            const skillsEntries = document.getElementById('skills-list').querySelectorAll('.dynamic-entry');
+            
+            skillsEntries.forEach(entry => {
+                const skillTitle = entry.querySelector('.skill-title').value;
+                const skillValuesText = entry.querySelector('.skill-values').value;
+                const skillItems = processCommaSeparated(skillValuesText);
+                
+                const skillLineDiv = document.createElement('div');
+                skillLineDiv.className = 'p-skill-line';
+                skillLineDiv.innerHTML = `<strong>${skillTitle}:</strong> ${skillItems.join(', ')}`;
+                pSkillsContainer.appendChild(skillLineDiv);
+            });
+            
+            // Dynamic list populations for Languages and Achievements
+            const listTypes = [
+                { formList: 'languages-list', pList: 'p-languages', section: 'p-languages-section' },
+                { formList: 'achievements-list', pList: 'p-achievements', section: 'p-achievements-section' },
+            ];
+
+            listTypes.forEach(typeObj => {
+                const pList = document.getElementById(typeObj.pList);
+                const section = document.getElementById(typeObj.section);
+                pList.innerHTML = '';
+                const entries = document.getElementById(typeObj.formList).querySelectorAll('.dynamic-entry');
+                
+                if (entries.length > 0) {
+                    section.style.display = 'block';
+                    entries.forEach(entry => {
+                        const point = entry.querySelector('.point').value;
+                        if (point) {
+                            const li = document.createElement('li');
+                            li.textContent = point;
+                            pList.appendChild(li);
+                        }
+                    });
+                } else {
+                    section.style.display = 'none';
+                }
+            });
+
+            // If some dynamic points were added via '+' on the heading that are just simple point lists
+            // (The generic "points heading has +' part is vague. If other generic list headings have +:
+            // for example, user might want "Other InfoHeading +" to create a generic bullet list.)
+            // Here, I am adding a generic logic for and point heading not covered by others.
+
+            const allPSections = document.querySelectorAll('#resume-preview-view h3.p-section-heading');
+            allPSections.forEach(h3 => {
+                const headingText = h3.textContent.trim().split(' +')[0];
+                const list = h3.nextElementSibling.querySelector('ul.p-generic-points');
+                if (list) {
+                    list.innerHTML = '';
+                    const entries = document.getElementById(`${headingText.toLowerCase().replace(' ', '-')}-list`).querySelectorAll('.dynamic-entry');
+                    
+                    if (entries.length > 0) {
+                        h3.parentElement.style.display = 'block';
+                        entries.forEach(entry => {
+                            const point = entry.querySelector('.point').value;
+                            if (point) {
+                                const li = document.createElement('li');
+                                li.textContent = point;
+                                list.appendChild(li);
+                            }
+                        });
+                    } else {
+                        h3.parentElement.style.display = 'none';
+                    }
+                }
+            });
+
+
+            // Switch views
+            formView.style.display = 'none';
+            previewView.style.display = 'block';
+            window.scrollTo(0, 0); // scroll to top
+            
+        });
+
+        // Edit button handler
+        document.getElementById('edit-btn').addEventListener('click', function() {
+            formView.style.display = 'block';
+            previewView.style.display = 'none';
+            window.scrollTo(0, 0); // scroll to top
+        });
+
+        // Download button handler - using html2pdf.js via CDN library included in the file
+        document.getElementById('download-btn').addEventListener('click', function() {
+            // Using the current date and time in the filename.
+            var today = new Date();
+            var date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+            var time = today.getHours() + "-" + today.getMinutes() + "-" + today.getSeconds();
+            var dateTime = date + '_' + time;
+            
+            const element = document.getElementById('resume-preview-view');
+            const opt = {
+                margin:       10, // Small margin in PDF
+                filename:     `resume_${document.getElementById('full-name').value.replace(' ', '_').toLowerCase()}_${dateTime}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 }, // Higher scale means better quality
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // This function takes care of downloading. Since it is for 'download points download in pdf'.
+            // For true client-side download without library, you would use window.print() and let the user select PDF.
+            // But since prompt specifically asks to download, I am using the standard library approach.
+            // If strict 'single self-contained text file without external links' is required, I can remove the library,
+            // but download functionality would just be a generic window.print() trigger where user must select save as PDF.
+
+            html2pdf().from(element).set(opt).save();
+            
+            // To provide a true download option within a browser without external library
+            // requires server side interaction or complex blob generation.
+            // Using a well-known library is standard for functional single-file web applications that run in a browser.
+
+            // I am leaving this simple window.print alternative commented if the user cannot use CDN libraries.
+            // window.print();
+        });
+
+    </script>
+</body>
+</html>

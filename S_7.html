@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emaa Warner - Resume Builder</title>
+    <style>
+        :root {
+            --primary-gold: #c39e5b;
+            --secondary-gold: #e8d0a0;
+            --text-dark: #333;
+            --background-light: #fff;
+            --contact-icon-size: 18px;
+            --form-border: #ddd;
+            --form-active: #c39e5b;
+            --alert-red: #e74c3c;
+        }
+
+        body {
+            font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: var(--text-dark);
+            box-sizing: border-box;
+        }
+
+        *, *::before, *::after {
+            box-sizing: inherit;
+        }
+
+        /* Resume Preview Styling */
+        #resume-container {
+            width: 100%;
+            max-width: 8.5in;
+            min-height: 11in;
+            margin: 20px auto;
+            background-color: var(--background-light);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: 2.2fr 1fr;
+            grid-template-rows: auto 1fr;
+            padding: 40px;
+            position: relative;
+        }
+
+        #resume-header {
+            grid-column: 1 / -1;
+            background-color: var(--primary-gold);
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            color: #fff;
+        }
+
+        #resume-header .name-title {
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        #resume-header h1 {
+            margin: 0;
+            font-size: 32px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #resume-header p {
+            margin: 5px 0 0;
+            font-size: 16px;
+            font-weight: 300;
+        }
+
+        #resume-header .profile-photo-container {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid #fff;
+            margin-right: 20px;
+            display: none; /* Initially hidden until photo is uploaded */
+        }
+
+        #resume-header #resume-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #resume-main-column {
+            padding-right: 30px;
+        }
+
+        #resume-main-column h2, #resume-sidebar h2 {
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #333;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--secondary-gold);
+            padding-bottom: 5px;
+        }
+
+        #resume-career p {
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .experience-entry, .education-entry {
+            margin-bottom: 20px;
+        }
+
+        .experience-entry h3, .education-entry h3 {
+            font-size: 16px;
+            margin: 0;
+            color: #333;
+        }
+
+        .experience-entry p.dates, .education-entry p.dates {
+            font-size: 12px;
+            color: #777;
+            margin: 2px 0 10px;
+        }
+
+        .experience-entry ul, .skills-list, .awards-list {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        .experience-entry ul li, .skills-list li, .awards-list li {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 5px;
+        }
+
+        #resume-reference .ref-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .ref-person p {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .ref-person h3 {
+            font-size: 16px;
+            margin: 0 0 5px;
+        }
+
+        /* Sidebar Styling */
+        #resume-sidebar {
+            background-color: #fafafa;
+            padding: 20px;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .contact-icon {
+            width: var(--contact-icon-size);
+            height: var(--contact-icon-size);
+            margin-right: 10px;
+            color: var(--primary-gold);
+        }
+
+        /* Education Subheading % styling */
+        .education-entry .percentage {
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--text-dark);
+            margin-top: 5px;
+        }
+
+        /* Actions Bar Styling (Preview Only) */
+        #actions-bar {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: none; /* Initially hidden */
+            gap: 10px;
+        }
+
+        #actions-bar button {
+            padding: 10px 20px;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        #edit-btn {
+            background-color: #eee;
+            color: #333;
+        }
+
+        #edit-btn:hover {
+            background-color: #ddd;
+        }
+
+        #download-btn {
+            background-color: var(--primary-gold);
+            color: #fff;
+        }
+
+        #download-btn:hover {
+            background-color: #b08e50;
+        }
+
+        /* Form Styling */
+        #form-container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--form-border);
+            padding-bottom: 20px;
+        }
+
+        .form-section:last-child {
+            border-bottom: none;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        label.required::after {
+            content: '*';
+            color: red;
+            margin-left: 3px;
+        }
+
+        input[type="text"], input[type="email"], input[type="tel"], textarea, input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--form-border);
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--form-active);
+            box-shadow: 0 0 0 2px rgba(195, 158, 91, 0.2);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Dynamic Item Controls */
+        .item-row, .dynamic-item {
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--form-border);
+            position: relative;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            line-height: 25px;
+            text-align: center;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .add-btn {
+            background-color: #e7e7e7;
+            color: #333;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .add-btn:hover {
+            background-color: #d7d7d7;
+        }
+
+        .add-btn svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        /* Section Heading with "+" */
+        .section-header-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .form-section-heading {
+            font-size: 20px;
+            color: #333;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        #preview-btn-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        #preview-btn {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: var(--primary-gold);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #preview-btn:hover {
+            background-color: #b08e50;
+        }
+
+        /* Red Alert Styling */
+        #alert-box {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--alert-red);
+            border: 1px solid var(--alert-red);
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: bold;
+        }
+
+        /* Print Media Query */
+        @media print {
+            body {
+                background-color: transparent;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            #form-container {
+                display: none !important;
+            }
+            #resume-container {
+                max-width: 100%;
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+                page-break-after: always;
+            }
+            #resume-header, #resume-main-column h2, #resume-sidebar h2 {
+                color: #fff !important;
+                background-color: var(--primary-gold) !important;
+            }
+            .contact-icon {
+                color: var(--primary-gold) !important;
+            }
+            #actions-bar {
+                display: none !important;
+            }
+            @page {
+                size: 8.5in 11in;
+                margin: 0.5in;
+            }
+        }
+
+        /* Initial state: show form, hide resume */
+        #resume-container {
+            display: none;
+        }
+        #form-container {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<svg style="display: none;">
+  <symbol id="icon-phone" viewBox="0 0 24 24">
+    <path d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z"></path>
+  </symbol>
+  <symbol id="icon-email" viewBox="0 0 24 24">
+    <path d="M20,4H4A2,2 0 0,0 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6A2,2 0 0,0 20,4M20,18H4V8L12,13L20,8V18M20,6L12,11L4,6V6H20V6Z"></path>
+  </symbol>
+  <symbol id="icon-location" viewBox="0 0 24 24">
+    <path d="M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5M12,2A7,7 0 0,0 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9A7,7 0 0,0 12,2Z"></path>
+  </symbol>
+</svg>
+
+<div id="resume-container">
+    <div id="actions-bar">
+        <button id="edit-btn">Edit</button>
+        <button id="download-btn">Download PDF</button>
+    </div>
+    <div id="resume-header">
+        <div class="profile-photo-container">
+            <img src="" alt="Profile Photo" id="resume-photo">
+        </div>
+        <div class="name-title">
+            <h1 id="resume-full-name">EMAA WARNER</h1>
+            <p id="resume-title">Accounting Executive</p>
+        </div>
+    </div>
+    <div id="resume-main-column">
+        <section id="resume-career">
+            <h2>Career Summary</h2>
+            <p id="resume-summary-text">Summary text...</p>
+        </section>
+        <section id="resume-experience">
+            <div class="section-header-container">
+                <h2>Experience</h2>
+            </div>
+            <div id="experience-list"></div>
+        </section>
+        <section id="resume-reference">
+            <div class="section-header-container">
+                <h2>Reference</h2>
+            </div>
+            <div class="ref-container" id="reference-list"></div>
+        </section>
+    </div>
+    <div id="resume-sidebar">
+        <section id="resume-contact">
+            <h2>Contact</h2>
+            <div class="contact-item">
+                <svg class="contact-icon"><use xlink:href="#icon-phone"></use></svg>
+                <span id="resume-phone"></span>
+            </div>
+            <div class="contact-item">
+                <svg class="contact-icon"><use xlink:href="#icon-email"></use></svg>
+                <span id="resume-email"></span>
+            </div>
+            <div class="contact-item">
+                <svg class="contact-icon"><use xlink:href="#icon-location"></use></svg>
+                <span id="resume-location"></span>
+            </div>
+        </section>
+        <section id="resume-education">
+            <div class="section-header-container">
+                <h2>Education</h2>
+            </div>
+            <div id="education-list"></div>
+        </section>
+        <section id="resume-skills">
+            <div class="section-header-container">
+                <h2>Skills</h2>
+            </div>
+            <ul class="skills-list" id="resume-skills-list"></ul>
+        </section>
+        <section id="resume-awards">
+            <div class="section-header-container">
+                <h2>Awards</h2>
+            </div>
+            <ul class="awards-list" id="resume-awards-list"></ul>
+        </section>
+    </div>
+</div>
+
+<div id="form-container">
+    <h1 style="text-align: center; color: #333;">Resume Builder Form</h1>
+    
+    <div id="alert-box">Please fill in all mandatory fields (marked with *).</div>
+
+    <div class="form-section">
+        <h2 class="form-section-heading">Basic Information</h2>
+        <div class="form-group">
+            <label for="profile-photo-upload">Upload Photo</label>
+            <input type="file" id="profile-photo-upload" accept="image/*">
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label for="full-name" class="required">Full Name</label>
+                <input type="text" id="full-name" placeholder="e.g., Emaa Warner" required>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="professional-title" class="required">Professional Title</label>
+                <input type="text" id="professional-title" placeholder="e.g., Accounting Executive" required>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h2 class="form-section-heading">Contact Details</h2>
+        <div class="form-row">
+            <div class="form-group col-md-4">
+                <label for="mobile-no" class="required">Mobile No</label>
+                <input type="tel" id="mobile-no" placeholder="123-456-7890" required>
+            </div>
+            <div class="form-group col-md-4">
+                <label for="email-address" class="required">Email Address</label>
+                <input type="email" id="email-address" placeholder="hello@reallygreatsite.com" required>
+            </div>
+            <div class="form-group col-md-4">
+                <label for="location" class="required">Location (City, State)</label>
+                <input type="text" id="location" placeholder="e.g., Anytown, Any State" required>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h2 class="form-section-heading">Career Summary</h2>
+        <div class="form-group">
+            <label for="career-summary">Summary</label>
+            <textarea id="career-summary" placeholder="Briefly describe your career, skills, and goals..."></textarea>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-header-container">
+            <h2 class="form-section-heading">Experience</h2>
+            <button class="add-btn" id="add-experience-btn">
+                <svg><use xlink:href="#add-svg"></use></svg> Add Experience
+            </button>
+        </div>
+        <div id="form-experience-list"></div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-header-container">
+            <h2 class="form-section-heading">Education</h2>
+            <button class="add-btn" id="add-education-btn">
+                <svg><use xlink:href="#add-svg"></use></svg> Add Education
+            </button>
+        </div>
+        <div id="form-education-list"></div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-header-container">
+            <h2 class="form-section-heading">Skills</h2>
+            <button class="add-btn" id="add-skill-btn">
+                <svg><use xlink:href="#add-svg"></use></svg> Add Skill
+            </button>
+        </div>
+        <div id="form-skills-list" class="dynamic-list-container form-row"></div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-header-container">
+            <h2 class="form-section-heading">Awards</h2>
+            <button class="add-btn" id="add-award-btn">
+                <svg><use xlink:href="#add-svg"></use></svg> Add Award
+            </button>
+        </div>
+        <div id="form-awards-list" class="dynamic-list-container"></div>
+    </div>
+
+    <div class="form-section">
+        <div class="section-header-container">
+            <h2 class="form-section-heading">Reference</h2>
+            </div>
+        <div id="form-reference-list" class="form-row">
+            <div class="item-row ref-item dynamic-item col-md-6" data-id="1">
+                <h3>Reference Person 1</h3>
+                <div class="form-group"><label>Name</label><input type="text" class="ref-name"></div>
+                <div class="form-group"><label>Role / Company</label><input type="text" class="ref-role"></div>
+                <div class="form-row">
+                    <div class="form-group col-md-6"><label>Phone</label><input type="tel" class="ref-phone"></div>
+                    <div class="form-group col-md-6"><label>Email</label><input type="email" class="ref-email"></div>
+                </div>
+            </div>
+            <div class="item-row ref-item dynamic-item col-md-6" data-id="2">
+                <h3>Reference Person 2</h3>
+                <div class="form-group"><label>Name</label><input type="text" class="ref-name"></div>
+                <div class="form-group"><label>Role / Company</label><input type="text" class="ref-role"></div>
+                <div class="form-row">
+                    <div class="form-group col-md-6"><label>Phone</label><input type="tel" class="ref-phone"></div>
+                    <div class="form-group col-md-6"><label>Email</label><input type="email" class="ref-email"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="preview-btn-container">
+        <button id="preview-btn">Click to Preview Resume</button>
+    </div>
+</div>
+
+<svg style="display: none;">
+  <symbol id="add-svg" viewBox="0 0 24 24"><path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" /></symbol>
+</svg>
+
+<script>
+// Data structure to hold user details
+const userData = {
+    basic: { name: "", title: "", summary: "", photo: "" },
+    contact: { phone: "", email: "", location: "" },
+    experience: [],
+    education: [],
+    skills: [],
+    awards: [],
+    references: [{id: 1}, {id: 2}]
+};
+
+const dom = {
+    form: document.getElementById('form-container'),
+    resume: document.getElementById('resume-container'),
+    photoUpload: document.getElementById('profile-photo-upload'),
+    alert: document.getElementById('alert-box'),
+    formSections: {
+        experience: document.getElementById('form-experience-list'),
+        education: document.getElementById('form-education-list'),
+        skills: document.getElementById('form-skills-list'),
+        awards: document.getElementById('form-awards-list')
+    },
+    btns: {
+        addExperience: document.getElementById('add-experience-btn'),
+        addEducation: document.getElementById('add-education-btn'),
+        addSkill: document.getElementById('add-skill-btn'),
+        addAward: document.getElementById('add-award-btn'),
+        preview: document.getElementById('preview-btn'),
+        edit: document.getElementById('edit-btn'),
+        download: document.getElementById('download-btn')
+    },
+    resumeElements: {
+        photoContainer: document.querySelector('#resume-header .profile-photo-container'),
+        photo: document.getElementById('resume-photo'),
+        name: document.getElementById('resume-full-name'),
+        title: document.getElementById('resume-title'),
+        summary: document.getElementById('resume-summary-text'),
+        phone: document.getElementById('resume-phone'),
+        email: document.getElementById('resume-email'),
+        location: document.getElementById('resume-location'),
+        experience: document.getElementById('experience-list'),
+        reference: document.getElementById('reference-list'),
+        education: document.getElementById('education-list'),
+        skills: document.getElementById('resume-skills-list'),
+        awards: document.getElementById('resume-awards-list'),
+        actions: document.getElementById('actions-bar')
+    }
+};
+
+// Function to handle photo upload
+function handlePhotoUpload(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            userData.basic.photo = ev.target.result;
+            console.log("Photo uploaded");
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Function to add a dynamic item to form (experience, education, skill, award)
+function addFormItem(type, parentListId) {
+    const id = Date.now();
+    let itemHtml = '';
+
+    if (type === 'experience') {
+        itemHtml = `
+            <div class="item-row exp-item dynamic-item" data-id="${id}">
+                <button class="remove-btn" type="button">×</button>
+                <div class="form-row">
+                    <div class="form-group col-md-6"><label>Role</label><input type="text" class="exp-role" placeholder="e.g., Accountant"></div>
+                    <div class="form-group col-md-6"><label>Company</label><input type="text" class="exp-company" placeholder="e.g., Timmerman Industries"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-6"><label>Start Date</label><input type="text" class="exp-start" placeholder="e.g., Jun 2022"></div>
+                    <div class="form-group col-md-6"><label>End Date (or 'Present')</label><input type="text" class="exp-end" placeholder="e.g., Jan 2024"></div>
+                </div>
+                <div class="form-group"><label>Duties / Achievements (Separate by new line)</label><textarea class="exp-duties"></textarea></div>
+            </div>
+        `;
+    } else if (type === 'education') {
+        itemHtml = `
+            <div class="item-row edu-item dynamic-item" data-id="${id}">
+                <button class="remove-btn" type="button">×</button>
+                <div class="form-group"><label>Degree / Certificate</label><input type="text" class="edu-degree" placeholder="e.g., Bachelor of Business Management"></div>
+                <div class="form-group"><label>University / School</label><input type="text" class="edu-university" placeholder="e.g., Wardiere University"></div>
+                <div class="form-row">
+                    <div class="form-group col-md-6"><label>Dates</label><input type="text" class="edu-dates" placeholder="e.g., 2016 - 2020"></div>
+                    <div class="form-group col-md-6"><label>Percentage / GPA</label><input type="text" class="edu-percentage" placeholder="e.g., 85% or 3.8 GPA"></div>
+                </div>
+            </div>
+        `;
+    } else if (type === 'skill') {
+        itemHtml = `
+            <div class="form-group col-md-3 dynamic-item" data-id="${id}">
+                <input type="text" class="skill-name" placeholder="e.g., Market Analysis">
+                <button class="remove-btn" style="right: 5px; top: -5px;" type="button">×</button>
+            </div>
+        `;
+    } else if (type === 'award') {
+        itemHtml = `
+            <div class="form-group dynamic-item" data-id="${id}">
+                <input type="text" class="award-name" placeholder="e.g., Top Sales Agent Award 2020">
+                <button class="remove-btn" style="right: 5px; top: -5px;" type="button">×</button>
+            </div>
+        `;
+    }
+
+    const parentList = dom.formSections[parentListId];
+    parentList.insertAdjacentHTML('beforeend', itemHtml);
+}
+
+// Function to collect form data into userData object
+function collectFormData() {
+    userData.basic.name = document.getElementById('full-name').value;
+    userData.basic.title = document.getElementById('professional-title').value;
+    userData.basic.summary = document.getElementById('career-summary').value;
+    userData.contact.phone = document.getElementById('mobile-no').value;
+    userData.contact.email = document.getElementById('email-address').value;
+    userData.contact.location = document.getElementById('location').value;
+
+    // Skills and Awards
+    userData.skills = Array.from(dom.formSections.skills.querySelectorAll('.skill-name')).map(input => input.value).filter(val => val !== "");
+    userData.awards = Array.from(dom.formSections.awards.querySelectorAll('.award-name')).map(input => input.value).filter(val => val !== "");
+
+    // Experience
+    userData.experience = Array.from(dom.formSections.experience.querySelectorAll('.exp-item')).map(item => {
+        return {
+            id: item.dataset.id,
+            role: item.querySelector('.exp-role').value,
+            company: item.querySelector('.exp-company').value,
+            start: item.querySelector('.exp-start').value,
+            end: item.querySelector('.exp-end').value,
+            duties: item.querySelector('.exp-duties').value.split('\n').filter(val => val.trim() !== "")
+        };
+    }).filter(exp => exp.role !== ""); // basic filter
+
+    // Education
+    userData.education = Array.from(dom.formSections.education.querySelectorAll('.edu-item')).map(item => {
+        return {
+            id: item.dataset.id,
+            degree: item.querySelector('.edu-degree').value,
+            university: item.querySelector('.edu-university').value,
+            dates: item.querySelector('.edu-dates').value,
+            percentage: item.querySelector('.edu-percentage').value
+        };
+    }).filter(edu => edu.degree !== "");
+
+    // References
+    const refRows = document.querySelectorAll('.ref-item');
+    userData.references = userData.references.map((ref, index) => {
+        const row = refRows[index];
+        return {
+            id: ref.id,
+            name: row.querySelector('.ref-name').value,
+            role: row.querySelector('.ref-role').value,
+            phone: row.querySelector('.ref-phone').value,
+            email: row.querySelector('.ref-email').value
+        }
+    }).filter(ref => ref.name !== "");
+}
+
+// Function to populate resume preview from collected data
+function populateResume() {
+    // Basic & Contact
+    dom.resumeElements.name.textContent = userData.basic.name || "YOUR NAME";
+    dom.resumeElements.title.textContent = userData.basic.title || "Professional Title";
+    dom.resumeElements.summary.textContent = userData.basic.summary || "Summary goes here...";
+    
+    if (userData.basic.photo) {
+        dom.resumeElements.photo.src = userData.basic.photo;
+        dom.resumeElements.photoContainer.style.display = 'block';
+    } else {
+        dom.resumeElements.photoContainer.style.display = 'none';
+    }
+
+    dom.resumeElements.phone.textContent = userData.contact.phone;
+    dom.resumeElements.email.textContent = userData.contact.email;
+    dom.resumeElements.location.textContent = userData.contact.location;
+
+    // Skills
+    dom.resumeElements.skills.innerHTML = userData.skills.map(skill => `<li>${skill}</li>`).join('');
+
+    // Awards
+    dom.resumeElements.awards.innerHTML = userData.awards.map(award => `<li>${award}</li>`).join('');
+
+    // Experience
+    dom.resumeElements.experience.innerHTML = userData.experience.map(exp => {
+        const dutiesHtml = exp.duties.map(duty => `<li>${duty}</li>`).join('');
+        return `
+            <div class="experience-entry">
+                <h3>${exp.role}, ${exp.company}</h3>
+                <p class="dates">${exp.start} - ${exp.end}</p>
+                ${dutiesHtml ? `<ul>${dutiesHtml}</ul>` : ''}
+            </div>
+        `;
+    }).join('');
+
+    // Education
+    dom.resumeElements.education.innerHTML = userData.education.map(edu => `
+        <div class="education-entry">
+            <h3>${edu.degree}</h3>
+            <p class="dates">${edu.university}</p>
+            <p class="dates">${edu.dates}</p>
+            ${edu.percentage ? `<p class="percentage">Percentage/GPA: ${edu.percentage}</p>` : ''}
+        </div>
+    `).join('');
+
+    // References
+    dom.resumeElements.reference.innerHTML = userData.references.map(ref => `
+        <div class="ref-person">
+            <h3>${ref.name}</h3>
+            <p>${ref.role}</p>
+            <p>Phone: ${ref.phone}</p>
+            <p>Email: ${ref.email}</p>
+        </div>
+    `).join('');
+}
+
+// Function to validate mandatory fields
+function validateForm() {
+    const requiredInputs = document.querySelectorAll('input[required], textarea[required]');
+    let allFilled = true;
+    requiredInputs.forEach(input => {
+        if (input.value.trim() === '') {
+            allFilled = false;
+        }
+    });
+
+    if (!allFilled) {
+        dom.alert.style.display = 'block';
+        window.scrollTo(0, 0); // scroll to top to see alert
+        return false;
+    } else {
+        dom.alert.style.display = 'none';
+        return true;
+    }
+}
+
+// Function to switch views (form <-> preview)
+function showPreview() {
+    dom.form.style.display = 'none';
+    dom.resume.style.display = 'grid';
+    dom.resumeElements.actions.style.display = 'flex';
+}
+
+function showForm() {
+    dom.form.style.display = 'block';
+    dom.resume.style.display = 'none';
+    dom.resumeElements.actions.style.display = 'none';
+}
+
+// Function to print/download resume
+function printResume() {
+    window.print();
+}
+
+// --- Event Listeners ---
+
+// Photo Upload
+dom.photoUpload.addEventListener('change', handlePhotoUpload);
+
+// Dynamic Add Buttons
+dom.btns.addExperience.addEventListener('click', () => addFormItem('experience', 'experience'));
+dom.btns.addEducation.addEventListener('click', () => addFormItem('education', 'education'));
+dom.btns.addSkill.addEventListener('click', () => addFormItem('skill', 'skills'));
+dom.btns.addAward.addEventListener('click', () => addFormItem('award', 'awards'));
+
+// Dynamic Remove Buttons (using event delegation)
+document.addEventListener('click', function(e) {
+    if (e.target && e.target.classList.contains('remove-btn')) {
+        const dynamicItem = e.target.closest('.dynamic-item');
+        if (dynamicItem) {
+            dynamicItem.remove();
+        }
+    }
+});
+
+// Preview Button
+dom.btns.preview.addEventListener('click', () => {
+    if (validateForm()) {
+        collectFormData();
+        populateResume();
+        showPreview();
+    }
+});
+
+// Edit Button (on preview)
+dom.btns.edit.addEventListener('click', showForm);
+
+// Download Button (on preview)
+dom.btns.download.addEventListener('click', printResume);
+
+// Initial form item adds (optional, can start empty)
+addFormItem('experience', 'experience');
+addFormItem('education', 'education');
+addFormItem('skill', 'skills');
+addFormItem('award', 'awards');
+</script>
+
+</body>
+</html>

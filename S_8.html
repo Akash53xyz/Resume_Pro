@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Builder and Previewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        h1, h2, h3 { color: #1e3a6a; }
+        h1 { margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;}
+        h2 { border-bottom: 2px solid #a4b7d1; padding-bottom: 5px; margin-top: 25px; display: flex; justify-content: space-between; align-items: center; }
+        h3 { color: #555; margin-bottom: 5px;}
+        hr { border: 0; border-top: 1px solid #ddd; margin: 10px 0; }
+        .form-section h2 .add-button { background-color: #1e3a6a; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 4px; font-size: 14px; }
+        
+        /* Container and Grid */
+        .main-container {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        /* Form Container Styles */
+        .form-container {
+            flex: 2;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        .form-group input, .form-group textarea, .form-group select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            background: #fafafa;
+        }
+        .form-group textarea { height: 100px; resize: vertical; }
+        .form-group input[type="file"] { padding: 5px; }
+        .repeating-item { position: relative; border-bottom: 1px dashed #ccc; padding-bottom: 10px; margin-bottom: 10px; }
+        .repeating-item:last-child { border-bottom: none; }
+        .repeating-item .remove-button { position: absolute; top: 10px; right: 10px; background-color: #d9534f; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 4px; font-size: 12px; }
+
+        /* Preview Modal Styles */
+        #previewModal {
+            display: none; 
+            position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; 
+            overflow: auto; background-color: rgba(0,0,0,0.7); 
+        }
+        .preview-content-container {
+            background-color: white;
+            width: 80%;
+            max-width: 800px;
+            margin: 3% auto;
+            border-radius: 8px;
+            padding: 30px;
+            position: relative;
+        }
+        .control-buttons-wrapper { text-align: center; margin-top: 20px; }
+        .control-button { padding: 10px 20px; margin: 0 10px; border: none; border-radius: 4px; cursor: pointer; color: white; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        .btn-blue { background-color: #1e3a6a; }
+        .btn-orange { background-color: #e67e22; }
+        .btn-green { background-color: #27ae60; }
+        .control-button:hover { opacity: 0.8; }
+        
+        /* Resume Preview Specific Styles - Matches the provided photo */
+        #resumePreview {
+            background-color: white;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            font-size: 14px;
+            color: #333;
+        }
+        #resumePreview .header-name { color: #1e3a6a; text-transform: uppercase; letter-spacing: 2px; font-size: 28px; font-weight: normal; margin: 0 0 5px 0; }
+        #resumePreview .header-title { color: #555; text-transform: uppercase; letter-spacing: 1.5px; font-size: 16px; margin: 0 0 10px 0; }
+        #resumePreview .contact-line { font-size: 12px; color: #555; margin-bottom: 20px; }
+        #resumePreview .preview-section-title { font-weight: bold; margin-bottom: 10px; text-transform: uppercase; color: #333; letter-spacing: 1px;}
+        #resumePreview h2.preview-section-title { border-bottom: none; display: block; margin-top: 0;}
+        #resumePreview .education-entry, #resumePreview .work-entry { margin-bottom: 15px; }
+        #resumePreview .uni-name, #resumePreview .comp-name, #resumePreview .work-time, #resumePreview .ref-details, #resumePreview .degree-name { font-weight: bold; color: #333; }
+        #resumePreview .degree-line, #resumePreview .job-title-line { display: block; font-size: 12px;}
+        #resumePreview .education-percent { font-size: 12px; color: #555; display: block; margin-top: 2px; font-style: italic; }
+        #resumePreview .education-time, #resumePreview .job-title-line span { color: #555; }
+        #resumePreview .ref-name { font-weight: bold; font-size: 14px; color: #1e3a6a; margin-top: 0;}
+        #resumePreview ul.preview-list { list-style: circle; padding-left: 20px; margin-top: 5px; }
+        #resumePreview ul.preview-list li { margin-bottom: 2px; font-size: 12px;}
+
+        /* Alert Stylings */
+        .alert { display: none; padding: 10px; margin-bottom: 15px; border: 1px solid transparent; border-radius: 4px; font-size: 14px; }
+        .alert-danger { color: #a94442; background-color: #f2dede; border-color: #ebccd1; }
+        .form-group.has-error input, .form-group.has-error textarea, .repeating-item.has-error { border-color: #d9534f !important; }
+        .section-error h2 { color: #d9534f !important; }
+        .section-error h2 hr { border-color: #d9534f !important; }
+
+        /* Two-Column Grid for Resume Preview */
+        .preview-grid {
+            display: grid;
+            grid-template-columns: 2fr 3fr;
+            gap: 20px;
+        }
+
+        /* Resume Preview Photo Frame */
+        #previewPhotoFrame {
+            float: right;
+            margin-left: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            overflow: hidden;
+            width: 100px;
+            height: 100px;
+            display: none; /* hidden if no photo */
+        }
+        #previewPhotoFrame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <div class="form-container">
+        <h1>Resume Builder</h1>
+        <div id="formAlert" class="alert alert-danger">Please fill in all the required fields. Highlighted sections need attention.</div>
+
+        <form id="resumeForm">
+            <div class="form-section">
+                <h2>Professional Summary</h2>
+                <div class="form-group required">
+                    <textarea id="professionalSummary" name="professionalSummary" placeholder="e.g., An experienced Sales Representative with a proven track record of..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Photo & Contact Details</h2>
+                <div class="form-group">
+                    <label for="profilePhoto">Profile Photo (optional)</label>
+                    <input type="file" id="profilePhoto" name="profilePhoto" accept="image/*">
+                    <img id="formPhotoPreview" src="#" alt="Photo Preview" style="display:none; max-width: 100px; max-height: 100px; margin-top: 10px; border-radius: 4px;">
+                </div>
+                <div class="form-group required">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName" name="fullName" placeholder="e.g., DONNA STROUPE" required>
+                </div>
+                <div class="form-group required">
+                    <label for="jobTitle">Job Title</label>
+                    <input type="text" id="jobTitle" name="jobTitle" placeholder="e.g., SALES REPRESENTATIVE" required>
+                </div>
+                <div class="form-group required">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" name="location" placeholder="e.g., 123 Anywhere St., Any City" required>
+                </div>
+                <div class="form-group required">
+                    <label for="mobileNo">Mobile Number</label>
+                    <input type="tel" id="mobileNo" name="mobileNo" placeholder="e.g., (123) 456-7890" required>
+                </div>
+                <div class="form-group required">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="e.g., donna.stroupe@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="website">Website (optional)</label>
+                    <input type="url" id="website" name="website" placeholder="e.g., www.donnastroupe.com">
+                </div>
+            </div>
+
+            <div class="form-section education-section">
+                <h2>Education <button type="button" class="add-button" id="addEducation">+</button></h2>
+                <div class="education-repeater"></div> </div>
+
+            <div class="form-section work-experience-section">
+                <h2>Work Experience <button type="button" class="add-button" id="addWork">+</button></h2>
+                <div class="work-repeater"></div> </div>
+
+            <div class="form-section skills-section">
+                <h2>Skills <button type="button" class="add-button" id="addSkill">+</button></h2>
+                <div class="skills-repeater form-group"></div> </div>
+
+            <div class="form-section languages-section">
+                <h2>Language <button type="button" class="add-button" id="addLanguage">+</button></h2>
+                <div class="languages-repeater form-group"></div> </div>
+
+            <div class="form-section references-section">
+                <h2>References <button type="button" class="add-button" id="addReference">+</button></h2>
+                <div class="references-repeater"></div> </div>
+
+            <button type="submit" class="control-button btn-blue" id="previewBtn">Preview</button>
+        </form>
+    </div>
+</div>
+
+<div id="previewModal" class="modal">
+    <div class="preview-content-container">
+        <div id="resumePreview">
+            <div id="previewPhotoFrame"></div>
+
+            <div style="float: left; width: calc(100% - 130px); margin-bottom: 10px;">
+                <h1 class="header-name" id="previewName">Your Name</h1>
+                <h2 class="header-title" id="previewTitle">Your Job Title</h2>
+            </div>
+            
+            <div class="contact-line" style="clear: both; margin-top: 10px;">
+                <span id="previewLocation">Location</span> | <span id="previewEmail">Email</span> <span id="previewWebDivider">|</span> <a href="#" id="previewWebLink" target="_blank">Website</a>
+            </div>
+            
+            <div id="previewSummary" style="margin-bottom: 25px;"></div>
+
+            <div class="preview-grid">
+                <div class="preview-left-col">
+                    <h2 class="preview-section-title">Education</h2>
+                    <div id="previewEducation"></div>
+
+                    <h2 class="preview-section-title" style="margin-top: 20px;">Skills</h2>
+                    <ul class="preview-list" id="previewSkills"></ul>
+                </div>
+
+                <div class="preview-right-col">
+                    <h2 class="preview-section-title">Work Experience</h2>
+                    <div id="previewWork"></div>
+
+                    <h2 class="preview-section-title" style="margin-top: 20px;">Language</h2>
+                    <ul class="preview-list" id="previewLanguages"></ul>
+                </div>
+            </div>
+
+            <div class="references-section" style="clear: both; margin-top: 25px;">
+                <h2 class="preview-section-title">References</h2>
+                <div class="preview-grid" id="previewReferences" style="grid-template-columns: 1fr 1fr; gap: 15px;"></div>
+            </div>
+        </div>
+
+        <div class="control-buttons-wrapper">
+            <button class="control-button btn-orange" id="editBtn">Edit</button>
+            <button class="control-button btn-green" id="downloadPdfBtn">Download PDF</button>
+        </div>
+    </div>
+</div>
+
+<template id="educationTemplate">
+    <div class="repeating-item education-entry form-group required">
+        <button type="button" class="remove-button">Remove</button>
+        <label>University Name</label>
+        <input type="text" name="uniName[]" placeholder="e.g., Borcelle University" required>
+        <label>Degree</label>
+        <input type="text" name="degree[]" placeholder="e.g., Bachelor of Business Management" required>
+        <label>Years</label>
+        <input type="text" name="eduYears[]" placeholder="e.g., 2020 - 2023" required>
+        <label>Percentage / CGPA Subheading (Add your percentage here)</label>
+        <input type="text" name="eduPercent[]" placeholder="e.g., CGPA 3.8 / 90%">
+    </div>
+</template>
+
+<template id="workTemplate">
+    <div class="repeating-item work-entry form-group required">
+        <button type="button" class="remove-button">Remove</button>
+        <label>Timeframe</label>
+        <input type="text" name="workTime[]" placeholder="e.g., (2020 - 2023)" required>
+        <label>Job Title</label>
+        <input type="text" name="jobTitleWork[]" placeholder="e.g., Sales Representative" required>
+        <label>Company Name</label>
+        <input type="text" name="compName[]" placeholder="e.g., Timmerman Industries" required>
+        <label>Responsibilities (Use new lines for bullet points)</label>
+        <textarea name="workDesc[]" placeholder="e.g., Offer consumer goods packages..." required></textarea>
+    </div>
+</template>
+
+<template id="skillTemplate">
+    <div class="repeating-item form-group" style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <button type="button" class="remove-button">Remove</button>
+        <input type="text" name="skill[]" placeholder="e.g., Negotiation" required style="width: auto; flex-grow: 1;">
+    </div>
+</template>
+
+<template id="languageTemplate">
+    <div class="repeating-item form-group required" style="display: flex; gap: 10px; margin-bottom: 10px;">
+        <button type="button" class="remove-button">Remove</button>
+        <input type="text" name="language[]" placeholder="e.g., English" required style="width: auto; flex-grow: 1;">
+    </div>
+</template>
+
+<template id="referenceTemplate">
+    <div class="repeating-item ref-entry form-group required">
+        <button type="button" class="remove-button">Remove</button>
+        <label>Reference Name</label>
+        <input type="text" name="refName[]" placeholder="e.g., Bailey Dupont" required>
+        <label>Title & Company</label>
+        <input type="text" name="refTitleComp[]" placeholder="e.g., Wardiere Inc. / CEO" required>
+        <label>Phone (optional)</label>
+        <input type="tel" name="refPhone[]" placeholder="e.g., 123-456-7890">
+        <label>Email (optional)</label>
+        <input type="email" name="refEmail[]" placeholder="e.g., hello@reallygreatsite.com">
+    </div>
+</template>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('resumeForm');
+        const formAlert = document.getElementById('formAlert');
+        const previewModal = document.getElementById('previewModal');
+        const previewBtn = document.getElementById('previewBtn');
+        const editBtn = document.getElementById('editBtn');
+        const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+        
+        // --- Photo Handling ---
+        const photoInput = document.getElementById('profilePhoto');
+        const formPhotoPreview = document.getElementById('formPhotoPreview');
+        const previewPhotoFrame = document.getElementById('previewPhotoFrame');
+
+        photoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    formPhotoPreview.src = e.target.result;
+                    formPhotoPreview.style.display = 'block';
+                    // Pre-load the preview modal frame too
+                    previewPhotoFrame.innerHTML = `<img src="${e.target.result}" alt="Photo">`;
+                    previewPhotoFrame.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            } else {
+                formPhotoPreview.style.display = 'none';
+                previewPhotoFrame.innerHTML = '';
+                previewPhotoFrame.style.display = 'none';
+            }
+        });
+
+        // --- Repeated Field Logic ---
+        function addRepeaterItem(repeaterClass, templateId) {
+            const repeater = document.querySelector('.' + repeaterClass);
+            const template = document.getElementById(templateId).content.cloneNode(true);
+            const removeBtn = template.querySelector('.remove-button');
+            removeBtn.addEventListener('click', function(e) {
+                e.target.closest('.repeating-item').remove();
+            });
+            repeater.appendChild(template);
+        }
+
+        document.getElementById('addEducation').addEventListener('click', () => addRepeaterItem('education-repeater', 'educationTemplate'));
+        document.getElementById('addWork').addEventListener('click', () => addRepeaterItem('work-repeater', 'workTemplate'));
+        document.getElementById('addSkill').addEventListener('click', () => addRepeaterItem('skills-repeater', 'skillTemplate'));
+        document.getElementById('addLanguage').addEventListener('click', () => addRepeaterItem('languages-repeater', 'languageTemplate'));
+        document.getElementById('addReference').addEventListener('click', () => addRepeaterItem('references-repeater', 'referenceTemplate'));
+
+        // Start with one blank item for each section
+        addRepeaterItem('education-repeater', 'educationTemplate');
+        addRepeaterItem('work-repeater', 'workTemplate');
+        addRepeaterItem('skills-repeater', 'skillTemplate');
+        addRepeaterItem('languages-repeater', 'languageTemplate');
+        addRepeaterItem('references-repeater', 'referenceTemplate');
+
+        // --- Form Validation and Preview ---
+        previewBtn.addEventListener('click', function (e) {
+            e.preventDefault(); // Prevent default form submission
+            
+            // 1. Reset Error States
+            document.querySelectorAll('.has-error').forEach(el => el.classList.remove('has-error'));
+            document.querySelectorAll('.section-error').forEach(el => el.classList.remove('section-error'));
+            formAlert.style.display = 'none';
+
+            // 2. Validate
+            let isValid = true;
+            const requiredFields = form.querySelectorAll('.required input, .required textarea, .repeating-item.required input, .repeating-item.required textarea');
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    isValid = false;
+                    field.closest('.form-group').classList.add('has-error');
+                    field.closest('.repeating-item').classList.add('has-error');
+                    // Add error style to section
+                    field.closest('.form-section').classList.add('section-error');
+                }
+            });
+
+            if (!isValid) {
+                formAlert.style.display = 'block';
+                window.scrollTo(0, 0); // Scroll to top to see alert
+                return;
+            }
+
+            // 3. Collect Data and Populate Preview
+            collectDataAndPopulatePreview();
+            previewModal.style.display = 'block';
+        });
+
+        editBtn.addEventListener('click', function () {
+            previewModal.style.display = 'none';
+        });
+
+        function collectDataAndPopulatePreview() {
+            // Header and Contact
+            document.getElementById('previewName').innerText = form.fullName.value;
+            document.getElementById('previewTitle').innerText = form.jobTitle.value;
+            document.getElementById('previewLocation').innerText = form.location.value;
+            document.getElementById('previewEmail').innerText = form.email.value;
+            const website = form.website.value;
+            const previewWebLink = document.getElementById('previewWebLink');
+            const previewWebDivider = document.getElementById('previewWebDivider');
+            if (website) {
+                previewWebLink.innerText = website;
+                previewWebLink.href = website;
+                previewWebDivider.style.display = 'inline';
+            } else {
+                previewWebLink.innerText = '';
+                previewWebLink.href = '#';
+                previewWebDivider.style.display = 'none';
+            }
+
+            // Summary
+            document.getElementById('previewSummary').innerHTML = `<h2 class="preview-section-title">Professional Summary</h2>${form.professionalSummary.value.replace(/\n/g, '<br>')}`;
+
+            // --- Collect and Populate Lists ---
+
+            // Education
+            const educationPreview = document.getElementById('previewEducation');
+            educationPreview.innerHTML = ''; // Clear old content
+            form.querySelectorAll('.education-entry').forEach(entry => {
+                const uni = entry.querySelector('input[name="uniName[]"]').value;
+                const degree = entry.querySelector('input[name="degree[]"]').value;
+                const years = entry.querySelector('input[name="eduYears[]"]').value;
+                const percent = entry.querySelector('input[name="eduPercent[]"]').value;
+                let percentSub = percent ? `<span class="education-percent">${percent}</span>` : '';
+
+                educationPreview.innerHTML += `
+                    <div class="education-entry">
+                        <span class="uni-name">${uni}</span>
+                        <span class="degree-line">
+                            <span class="degree-name">${degree}</span>
+                            <span class="education-time">${years}</span>
+                        </span>
+                        ${percentSub}
+                    </div>
+                `;
+            });
+
+            // Work Experience
+            const workPreview = document.getElementById('previewWork');
+            workPreview.innerHTML = ''; 
+            form.querySelectorAll('.work-entry').forEach(entry => {
+                const timeframe = entry.querySelector('input[name="workTime[]"]').value;
+                const jobTitleWork = entry.querySelector('input[name="jobTitleWork[]"]').value;
+                const companyName = entry.querySelector('input[name="compName[]"]').value;
+                const responsibilities = entry.querySelector('textarea[name="workDesc[]"]').value;
+                const points = responsibilities.split('\n').filter(p => p.trim()); // Split by newline
+
+                let listHtml = '<ul class="preview-list">';
+                points.forEach(point => {
+                    listHtml += `<li>${point.trim()}</li>`;
+                });
+                listHtml += '</ul>';
+
+                workPreview.innerHTML += `
+                    <div class="work-entry">
+                        <span class="comp-name">${companyName}</span>
+                        <span class="job-title-line">
+                            <span class="work-time">${timeframe}</span>
+                            <span>${jobTitleWork}</span>
+                        </span>
+                        ${listHtml}
+                    </div>
+                `;
+            });
+
+            // Skills
+            const skillsPreview = document.getElementById('previewSkills');
+            skillsPreview.innerHTML = '';
+            form.querySelectorAll('input[name="skill[]"]').forEach(input => {
+                if (input.value.trim()) skillsPreview.innerHTML += `<li>${input.value}</li>`;
+            });
+
+            // Languages
+            const languagesPreview = document.getElementById('previewLanguages');
+            languagesPreview.innerHTML = '';
+            form.querySelectorAll('input[name="language[]"]').forEach(input => {
+                if (input.value.trim()) languagesPreview.innerHTML += `<li>${input.value}</li>`;
+            });
+
+            // References
+            const refPreview = document.getElementById('previewReferences');
+            refPreview.innerHTML = '';
+            form.querySelectorAll('.ref-entry').forEach(entry => {
+                const name = entry.querySelector('input[name="refName[]"]').value;
+                const titleComp = entry.querySelector('input[name="refTitleComp[]"]').value;
+                const phone = entry.querySelector('input[name="refPhone[]"]').value;
+                const email = entry.querySelector('input[name="refEmail[]"]').value;
+                let contactInfo = '';
+                if (phone) contactInfo += `<br>Phone: ${phone}`;
+                if (email) contactInfo += `<br>Email: ${email}`;
+
+                refPreview.innerHTML += `
+                    <div class="ref-details">
+                        <span class="ref-name">${name}</span>
+                        <span class="degree-line" style="margin-top: 2px;">
+                            <span>${titleComp}</span>
+                            <span class="education-time">${contactInfo}</span>
+                        </span>
+                    </div>
+                `;
+            });
+        }
+
+        // --- PDF Download Functionality ---
+        downloadPdfBtn.addEventListener('click', function () {
+            const element = document.getElementById('resumePreview');
+            const opt = {
+                margin:       10, // 1cm margin all around
+                filename:     'My_Resume.pdf',
+                image:        { type: 'jpeg', quality: 1 },
+                html2canvas:  { scale: 2 }, // Higher scale for better text sharpness
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // New Promise-based usage:
+            html2pdf().set(opt).from(element).save();
+        });
+
+    });
+</script>
+
+</body>
+</html>

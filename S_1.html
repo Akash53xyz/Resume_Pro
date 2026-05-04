@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Builder</title>
+    <style>
+        /* --- General & Form Styles --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #222;
+            border-bottom: 2px solid #eaeaea;
+            padding-bottom: 10px;
+        }
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+        }
+        .add-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            font-size: 18px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .add-btn:hover { background-color: #0056b3; }
+        .remove-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: 600;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        textarea { height: 100px; resize: vertical; }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .dynamic-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        
+        /* Validation Styles */
+        .invalid-field {
+            border: 2px solid #dc3545 !important;
+            background-color: #fff8f8;
+        }
+        #alertBox {
+            display: none;
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: center;
+        }
+        .main-btn {
+            padding: 12px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+        }
+        #previewBtn { background-color: #28a745; }
+        #editBtn { background-color: #6c757d; display: none; }
+        #downloadBtn { background-color: #17a2b8; display: none; }
+
+        /* --- Resume Preview Styles --- */
+        #previewSection {
+            display: none;
+        }
+        .resume-page {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        .resume-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .resume-name {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 0 0 10px 0;
+        }
+        .resume-contact {
+            font-size: 13px;
+            color: #444;
+            line-height: 1.6;
+        }
+        .resume-photo {
+            width: 120px;
+            height: 120px;
+            border-radius: 8px;
+            object-fit: cover;
+            display: none;
+            border: 1px solid #ddd;
+        }
+        .resume-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+        .res-section-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            margin-top: 25px;
+        }
+        .res-text {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #333;
+        }
+        .res-item { margin-bottom: 15px; }
+        .res-item-title { font-weight: bold; font-size: 14px; margin: 0; }
+        .res-item-subtitle { font-size: 13px; color: #555; margin: 2px 0; }
+        ul.res-list {
+            margin: 5px 0 0 0;
+            padding-left: 20px;
+            font-size: 13px;
+        }
+        ul.res-list li { margin-bottom: 4px; }
+
+        /* Print Specific Styles */
+        @media print {
+            body { background: white; padding: 0; margin: 0; }
+            .container { box-shadow: none; padding: 0; max-width: 100%; }
+            .action-buttons, #formSection, #alertBox { display: none !important; }
+            #previewSection { display: block !important; }
+            .resume-page { box-shadow: none; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="alertBox">Please fill in all the required fields highlighted in red!</div>
+
+    <div id="formSection">
+        <h1>Fill Details for Resume</h1>
+        
+        <label>Upload Photo</label>
+        <input type="file" id="f_photo" accept="image/*">
+
+        <label>Full Name *</label>
+        <input type="text" id="f_name" class="req" placeholder="e.g. Rahul Gupta">
+
+        <h2>Contact Details</h2>
+        <div class="form-row">
+            <div>
+                <label>Mobile Number *</label>
+                <input type="text" id="f_mob" class="req" placeholder="+91-123-456-7890">
+            </div>
+            <div>
+                <label>Email *</label>
+                <input type="email" id="f_email" class="req" placeholder="hello@reallygreatsite.com">
+            </div>
+            <div>
+                <label>Location (City/Address) *</label>
+                <input type="text" id="f_loc" class="req" placeholder="123 Anywhere St., Any City">
+            </div>
+            <div>
+                <label>Website/Links</label>
+                <input type="text" id="f_links" placeholder="www.reallygreatsite.com">
+            </div>
+        </div>
+
+        <h2>About / Professional Summary *</h2>
+        <textarea id="f_about" class="req" placeholder="A brief summary about your professional background..."></textarea>
+
+        <div class="section-heading">
+            <h2>Work Experience</h2>
+            <button type="button" class="add-btn" onclick="addExperience()">+</button>
+        </div>
+        <div id="expContainer"></div>
+
+        <div class="section-heading">
+            <h2>Education</h2>
+            <button type="button" class="add-btn" onclick="addEducation()">+</button>
+        </div>
+        <div id="eduContainer"></div>
+
+        <div class="section-heading">
+            <h2>Skills & Proficiencies</h2>
+            <button type="button" class="add-btn" onclick="addSkill()">+</button>
+        </div>
+        <div id="skillContainer"></div>
+
+        <div class="section-heading">
+            <h2>Languages</h2>
+            <button type="button" class="add-btn" onclick="addLanguage()">+</button>
+        </div>
+        <div id="langContainer"></div>
+    </div>
+
+    <div id="previewSection">
+        <div class="resume-page">
+            <div class="resume-header">
+                <div>
+                    <h1 class="resume-name" id="p_name">Name</h1>
+                    <div class="resume-contact">
+                        <div id="p_loc">Location</div>
+                        <div id="p_mob">Mobile</div>
+                        <div id="p_email">Email</div>
+                        <div id="p_links">Links</div>
+                    </div>
+                </div>
+                <img id="p_photo" class="resume-photo" src="" alt="Profile Photo">
+            </div>
+
+            <div class="resume-body">
+                <div>
+                    <div class="res-section-title">Professional Summary</div>
+                    <div class="res-text" id="p_about">Summary goes here.</div>
+
+                    <div class="res-section-title">Relevant Experience</div>
+                    <div id="p_experience"></div>
+
+                    <div class="res-section-title" id="langTitle" style="display:none;">Languages</div>
+                    <ul class="res-list" id="p_languages"></ul>
+                </div>
+
+                <div>
+                    <div class="res-section-title">Skills and Proficiencies</div>
+                    <div id="p_skills"></div>
+
+                    <div class="res-section-title">Education</div>
+                    <div id="p_education"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="action-buttons">
+        <button id="previewBtn" class="main-btn" onclick="generatePreview()">Preview Resume</button>
+        <button id="editBtn" class="main-btn" onclick="editResume()">Edit Info</button>
+        <button id="downloadBtn" class="main-btn" onclick="downloadPDF()">Download PDF</button>
+    </div>
+
+</div>
+
+<script>
+    // --- Dynamic Field Generators ---
+
+    function addExperience() {
+        const container = document.getElementById('expContainer');
+        const div = document.createElement('div');
+        div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" class="exp-company req" placeholder="Company Name *">
+            <input type="text" class="exp-dates req" placeholder="Dates (e.g., Oct 2024 to May 2025) *">
+            <input type="text" class="exp-role req" placeholder="Job Role *">
+            <textarea class="exp-desc" placeholder="Description / Bullet points (Separate by new line)"></textarea>
+            <button class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function addEducation() {
+        const container = document.getElementById('eduContainer');
+        const div = document.createElement('div');
+        div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" class="edu-degree req" placeholder="Degree / Course Name *">
+            <input type="text" class="edu-inst req" placeholder="Institution Name *">
+            <input type="text" class="edu-dates" placeholder="Year (e.g., 2022 to 2024)">
+            <input type="text" class="edu-perc req" placeholder="Percentage / CGPA *">
+            <button class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function addSkill() {
+        const container = document.getElementById('skillContainer');
+        const div = document.createElement('div');
+        div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" class="skill-title req" placeholder="Skill Category (e.g. Teamwork) *">
+            <textarea class="skill-desc req" placeholder="Details (Separate by new line) *"></textarea>
+            <button class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+        `;
+        container.appendChild(div);
+    }
+
+    function addLanguage() {
+        const container = document.getElementById('langContainer');
+        const div = document.createElement('div');
+        div.className = 'dynamic-item';
+        div.innerHTML = `
+            <input type="text" class="lang-name req" placeholder="Language (e.g. English) *">
+            <button class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+        `;
+        container.appendChild(div);
+    }
+
+    // Initialize with one empty field for each section
+    window.onload = () => {
+        addExperience();
+        addEducation();
+        addSkill();
+        addLanguage();
+    };
+
+    // --- Photo Handling ---
+    let photoDataURL = "";
+    document.getElementById('f_photo').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                photoDataURL = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // --- Core Functions ---
+
+    function generatePreview() {
+        const alertBox = document.getElementById('alertBox');
+        let isValid = true;
+
+        // Reset borders
+        document.querySelectorAll('.req').forEach(el => el.classList.remove('invalid-field'));
+
+        // Validate required fields
+        document.querySelectorAll('.req').forEach(el => {
+            if (!el.value.trim()) {
+                el.classList.add('invalid-field');
+                isValid = false;
+            }
+        });
+
+        if (!isValid) {
+            alertBox.style.display = 'block';
+            window.scrollTo(0, 0);
+            return;
+        }
+
+        alertBox.style.display = 'none';
+
+        // Populate Static Data
+        document.getElementById('p_name').innerText = document.getElementById('f_name').value;
+        document.getElementById('p_mob').innerText = document.getElementById('f_mob').value;
+        document.getElementById('p_email').innerText = document.getElementById('f_email').value;
+        document.getElementById('p_loc').innerText = document.getElementById('f_loc').value;
+        document.getElementById('p_links').innerText = document.getElementById('f_links').value;
+        document.getElementById('p_about').innerText = document.getElementById('f_about').value;
+
+        // Populate Photo
+        const photoEl = document.getElementById('p_photo');
+        if (photoDataURL) {
+            photoEl.src = photoDataURL;
+            photoEl.style.display = 'block';
+        } else {
+            photoEl.style.display = 'none';
+        }
+
+        // Populate Experience
+        const expContainer = document.getElementById('p_experience');
+        expContainer.innerHTML = '';
+        document.querySelectorAll('#expContainer .dynamic-item').forEach(item => {
+            const comp = item.querySelector('.exp-company').value;
+            const dates = item.querySelector('.exp-dates').value;
+            const role = item.querySelector('.exp-role').value;
+            const desc = item.querySelector('.exp-desc').value.split('\n').filter(l => l.trim());
+            
+            let bullets = desc.map(d => `<li>${d}</li>`).join('');
+            let ul = bullets ? `<ul class="res-list">${bullets}</ul>` : '';
+
+            expContainer.innerHTML += `
+                <div class="res-item">
+                    <div class="res-item-title">${comp}</div>
+                    <div class="res-item-subtitle">${dates}</div>
+                    <div class="res-item-subtitle">${role}</div>
+                    ${ul}
+                </div>
+            `;
+        });
+
+        // Populate Education
+        const eduContainer = document.getElementById('p_education');
+        eduContainer.innerHTML = '';
+        document.querySelectorAll('#eduContainer .dynamic-item').forEach(item => {
+            const degree = item.querySelector('.edu-degree').value;
+            const inst = item.querySelector('.edu-inst').value;
+            const dates = item.querySelector('.edu-dates').value;
+            const perc = item.querySelector('.edu-perc').value;
+
+            eduContainer.innerHTML += `
+                <div class="res-item">
+                    <div class="res-item-title">${degree}</div>
+                    <div class="res-item-subtitle">${inst}</div>
+                    <div class="res-item-subtitle">${dates}</div>
+                    <div class="res-item-subtitle" style="font-weight:bold;">Percentage/CGPA: ${perc}</div>
+                </div>
+            `;
+        });
+
+        // Populate Skills
+        const pSkillContainer = document.getElementById('p_skills');
+        pSkillContainer.innerHTML = '';
+        document.querySelectorAll('#skillContainer .dynamic-item').forEach(item => {
+            const title = item.querySelector('.skill-title').value;
+            const desc = item.querySelector('.skill-desc').value.split('\n').filter(l => l.trim());
+            
+            let bullets = desc.map(d => `<li>${d}</li>`).join('');
+
+            pSkillContainer.innerHTML += `
+                <div class="res-item">
+                    <div class="res-item-title">${title}</div>
+                    <ul class="res-list">${bullets}</ul>
+                </div>
+            `;
+        });
+
+        // Populate Languages
+        const pLangContainer = document.getElementById('p_languages');
+        pLangContainer.innerHTML = '';
+        let langCount = 0;
+        document.querySelectorAll('#langContainer .dynamic-item').forEach(item => {
+            const lang = item.querySelector('.lang-name').value;
+            if (lang.trim()) {
+                pLangContainer.innerHTML += `<li>${lang}</li>`;
+                langCount++;
+            }
+        });
+        document.getElementById('langTitle').style.display = langCount > 0 ? 'block' : 'none';
+
+        // Switch Views
+        document.getElementById('formSection').style.display = 'none';
+        document.getElementById('previewSection').style.display = 'block';
+        
+        document.getElementById('previewBtn').style.display = 'none';
+        document.getElementById('editBtn').style.display = 'block';
+        document.getElementById('downloadBtn').style.display = 'block';
+        window.scrollTo(0, 0);
+    }
+
+    function editResume() {
+        document.getElementById('formSection').style.display = 'block';
+        document.getElementById('previewSection').style.display = 'none';
+        
+        document.getElementById('previewBtn').style.display = 'block';
+        document.getElementById('editBtn').style.display = 'none';
+        document.getElementById('downloadBtn').style.display = 'none';
+        window.scrollTo(0, 0);
+    }
+
+    function downloadPDF() {
+        // Uses the browser's built-in print functionality. 
+        // The @media print CSS rules will hide the buttons and ensure only the resume prints.
+        // User just needs to select "Save as PDF" in their print dialog.
+        window.print();
+    }
+
+</script>
+</body>
+</html>
