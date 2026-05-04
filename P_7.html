@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Builder - Juliana Silva Style</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        /* --- GLOBAL STYLES --- */
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #e2e8f0; margin: 0; padding: 20px; color: #333; }
+        .wrapper { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        button { cursor: pointer; font-family: inherit; }
+
+        /* --- FORM STYLES --- */
+        #form-view { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .form-header { text-align: center; margin-bottom: 25px; border-bottom: 2px solid #eee; padding-bottom: 15px; }
+        .form-header h1 { margin: 0; color: #2c3e50; text-transform: uppercase; }
+        
+        .alert-box { display: none; background: #ffebee; color: #c62828; padding: 15px; border-left: 5px solid #c62828; margin-bottom: 25px; font-weight: bold; border-radius: 4px; }
+        .error-border { border: 2px solid #c62828 !important; background-color: #fffafa !important; }
+
+        .section-box { margin-bottom: 25px; background: #f8fafc; padding: 20px; border-radius: 6px; border: 1px solid #e2e8f0; }
+        .section-box-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .section-box-header h2 { margin: 0; font-size: 18px; color: #334155; text-transform: uppercase; }
+        
+        .btn-add { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 16px; font-weight: bold; transition: 0.2s;}
+        .btn-add:hover { background: #2563eb; }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; color: #475569; }
+        input[type="text"], input[type="email"], input[type="tel"], textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px; }
+        textarea { height: 80px; resize: vertical; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        .repeater-item { background: white; border: 1px solid #cbd5e1; padding: 15px; border-radius: 4px; position: relative; margin-bottom: 15px; }
+        .btn-remove { position: absolute; top: 10px; right: 10px; background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+
+        .btn-main { display: block; width: 100%; max-width: 300px; margin: 30px auto 0; padding: 15px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; }
+        .btn-main:hover { background: #059669; }
+
+        /* --- PREVIEW STYLES (Matching Juliana Silva layout) --- */
+        #preview-view { display: none; flex-direction: column; align-items: center; }
+        .preview-actions { display: flex; gap: 15px; margin-bottom: 25px; }
+        .preview-actions button { padding: 12px 25px; font-size: 16px; border: none; border-radius: 6px; color: white; font-weight: bold; }
+        .btn-edit { background: #64748b; }
+        .btn-edit:hover { background: #475569; }
+        .btn-pdf { background: #ef4444; }
+        .btn-pdf:hover { background: #dc2626; }
+
+        /* The Resume A4 Layout */
+        #resume-paper { width: 800px; min-height: 1131px; background: white; display: flex; box-shadow: 0 0 20px rgba(0,0,0,0.2); }
+        
+        /* Left Column (Light Blue-Grey) */
+        .left-col { flex: 0 0 35%; background: #e8eff5; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; text-align: center; }
+        
+        .photo-wrapper { margin-bottom: 20px; }
+        .photo-img { width: 160px; height: 160px; border-radius: 50%; object-fit: cover; border: 4px solid #cbd5e1; background: white; }
+        
+        .res-name { font-size: 26px; font-weight: 800; color: #334155; text-transform: uppercase; margin: 0 0 5px 0; letter-spacing: 1px; line-height: 1.1; }
+        .res-title { font-size: 14px; font-style: italic; color: #64748b; margin: 0 0 30px 0; letter-spacing: 1px; }
+
+        .side-header { background: #cbd5e1; color: #334155; padding: 6px 15px; text-transform: uppercase; font-weight: bold; letter-spacing: 2px; margin: 15px 0; width: 80%; border-radius: 2px; font-size: 14px;}
+        
+        .side-text { font-size: 12px; color: #475569; margin: 4px 0; line-height: 1.4; }
+        .side-group { margin-bottom: 15px; width: 100%; }
+        .side-bold { font-weight: bold; color: #334155; }
+        .side-edu-date { font-size: 11px; color: #64748b; margin-top: 2px; }
+        .side-gpa { font-size: 11px; color: #2563eb; font-weight: bold; margin-top: 2px;}
+
+        .side-list { list-style: none; padding: 0; margin: 0; width: 100%; }
+        .side-list li { font-size: 13px; color: #475569; margin-bottom: 6px; }
+
+        /* Right Column (White) */
+        .right-col { flex: 0 0 65%; padding: 50px 40px; background: white; }
+        
+        .main-header { font-size: 18px; font-weight: 800; text-transform: uppercase; color: #334155; letter-spacing: 1px; margin: 0 0 15px 0; }
+        .main-text { font-size: 12px; color: #64748b; line-height: 1.6; margin: 0 0 30px 0; }
+
+        /* Experience Layout */
+        .exp-row { display: flex; margin-bottom: 25px; }
+        .exp-dates { flex: 0 0 60px; font-size: 12px; font-weight: bold; color: #475569; text-align: center; line-height: 1.4; margin-right: 20px; padding-top: 2px; }
+        .exp-details { flex: 1; }
+        .exp-title { font-size: 15px; font-weight: bold; color: #334155; margin: 0 0 3px 0; }
+        .exp-company { font-size: 12px; font-style: italic; color: #64748b; margin: 0 0 8px 0; }
+        .exp-bullets { margin: 0; padding-left: 15px; font-size: 11px; color: #64748b; line-height: 1.5; }
+        .exp-bullets li { margin-bottom: 4px; }
+
+        /* References Layout */
+        .ref-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .ref-item { font-size: 11px; color: #64748b; line-height: 1.5;}
+        .ref-name { font-size: 14px; font-weight: bold; color: #334155; margin: 0 0 2px 0; }
+        .ref-title { margin: 0 0 5px 0; font-style: italic;}
+        .ref-contact { margin: 0; }
+        .ref-contact b { color: #334155; }
+
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div id="form-view">
+        <div class="form-header">
+            <h1>Resume Builder</h1>
+            <p>Juliana Silva Layout. Fields with * are required.</p>
+        </div>
+
+        <div id="alert-banner" class="alert-box">
+            RED ALERT: Please fill in all required fields highlighted in red!
+        </div>
+
+        <form id="builder-form">
+            <div class="section-box">
+                <div class="section-box-header"><h2>1. Profile & Contact</h2></div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Profile Photo *</label>
+                        <input type="file" id="in-photo" accept="image/*" class="req">
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" id="in-name" placeholder="Juliana Silva" class="req">
+                    </div>
+                    <div class="form-group">
+                        <label>Job Title *</label>
+                        <input type="text" id="in-title" placeholder="Sales Representative" class="req">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number *</label>
+                        <input type="tel" id="in-phone" placeholder="+123-456-7890" class="req">
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="in-email" placeholder="hello@reallygreatsite.com" class="req">
+                    </div>
+                    <div class="form-group">
+                        <label>Website</label>
+                        <input type="text" id="in-web" placeholder="www.reallygreatsite.com">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Location *</label>
+                        <input type="text" id="in-loc" placeholder="123 Anywhere St., Any City, ST 12345" class="req">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-box">
+                <div class="section-box-header"><h2>2. About Me</h2></div>
+                <div class="form-group">
+                    <label>Summary *</label>
+                    <textarea id="in-about" placeholder="Lorem ipsum dolor sit amet..." class="req"></textarea>
+                </div>
+            </div>
+
+            <div class="section-box">
+                <div class="section-box-header">
+                    <h2>3. Education</h2>
+                    <button type="button" class="btn-add" onclick="addRepeater('edu')">+</button>
+                </div>
+                <div id="edu-container"></div>
+            </div>
+
+            <div class="section-box">
+                <div class="section-box-header">
+                    <h2>4. Professional Experience</h2>
+                    <button type="button" class="btn-add" onclick="addRepeater('exp')">+</button>
+                </div>
+                <div id="exp-container"></div>
+            </div>
+
+            <div class="section-box">
+                <div class="section-box-header">
+                    <h2>5. Skills</h2>
+                    <button type="button" class="btn-add" onclick="addRepeater('skill')">+</button>
+                </div>
+                <div id="skill-container" class="grid-2"></div>
+            </div>
+
+            <div class="section-box">
+                <div class="section-box-header">
+                    <h2>6. Languages</h2>
+                    <button type="button" class="btn-add" onclick="addRepeater('lang')">+</button>
+                </div>
+                <div id="lang-container" class="grid-2"></div>
+            </div>
+
+            <div class="section-box">
+                <div class="section-box-header">
+                    <h2>7. References</h2>
+                    <button type="button" class="btn-add" onclick="addRepeater('ref')">+</button>
+                </div>
+                <div id="ref-container" class="grid-2"></div>
+            </div>
+
+            <button type="button" class="btn-main" onclick="processForm()">Generate Preview</button>
+        </form>
+    </div>
+
+    <div id="preview-view">
+        <div class="preview-actions">
+            <button class="btn-edit" onclick="goBack()">Edit Details</button>
+            <button class="btn-pdf" onclick="savePdf()">Download PDF</button>
+        </div>
+
+        <div id="resume-paper">
+            <div class="left-col">
+                <div class="photo-wrapper"><img id="out-photo" class="photo-img" src="" alt="Profile"></div>
+                <h1 class="res-name" id="out-name">Name</h1>
+                <p class="res-title" id="out-title">Title</p>
+
+                <div class="side-header">Contact</div>
+                <div class="side-group">
+                    <p class="side-text" id="out-phone"></p>
+                    <p class="side-text" id="out-email"></p>
+                    <p class="side-text" id="out-web"></p>
+                    <p class="side-text" id="out-loc"></p>
+                </div>
+
+                <div class="side-header">Education</div>
+                <div id="out-edu" class="side-group">
+                    </div>
+
+                <div class="side-header">Skills</div>
+                <ul id="out-skill" class="side-list">
+                    </ul>
+
+                <div class="side-header">Language</div>
+                <ul id="out-lang" class="side-list">
+                    </ul>
+            </div>
+
+            <div class="right-col">
+                <h2 class="main-header">About Me</h2>
+                <p class="main-text" id="out-about"></p>
+
+                <h2 class="main-header">Professional Experience</h2>
+                <div id="out-exp">
+                    </div>
+
+                <h2 class="main-header" style="margin-top: 40px;">References</h2>
+                <div class="ref-grid" id="out-ref">
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- TEMPLATES FOR DYNAMIC DATA ---
+    // Defined securely as HTML strings
+    const tmpl = {
+        edu: `
+            <div class="repeater-item">
+                <button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button>
+                <div class="form-group"><label>Degree *</label><input type="text" class="i-edu-deg req" placeholder="Bachelor of Marketing"></div>
+                <div class="form-group"><label>University *</label><input type="text" class="i-edu-uni req" placeholder="Wardiere University"></div>
+                <div class="grid-2">
+                    <div class="form-group"><label>Years *</label><input type="text" class="i-edu-date req" placeholder="2006 - 2008"></div>
+                    <div class="form-group"><label>Percentage (Optional)</label><input type="text" class="i-edu-gpa" placeholder="e.g. 85% / GPA 3.8"></div>
+                </div>
+            </div>`,
+        exp: `
+            <div class="repeater-item">
+                <button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button>
+                <div class="grid-2">
+                    <div class="form-group"><label>Start Year *</label><input type="text" class="i-exp-start req" placeholder="2020"></div>
+                    <div class="form-group"><label>End Year *</label><input type="text" class="i-exp-end req" placeholder="2023"></div>
+                </div>
+                <div class="form-group"><label>Job Title *</label><input type="text" class="i-exp-title req" placeholder="Inside Sales Representative"></div>
+                <div class="form-group"><label>Company & Location *</label><input type="text" class="i-exp-comp req" placeholder="Arowwai Industries | Any City"></div>
+                <div class="form-group"><label>Responsibilities (Use Enter for bullet points) *</label><textarea class="i-exp-desc req"></textarea></div>
+            </div>`,
+        skill: `
+            <div class="repeater-item" style="padding-bottom:10px;">
+                <button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button>
+                <input type="text" class="i-skill-val req" placeholder="e.g. Sales Strategies">
+            </div>`,
+        lang: `
+            <div class="repeater-item" style="padding-bottom:10px;">
+                <button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button>
+                <input type="text" class="i-lang-val req" placeholder="e.g. English">
+            </div>`,
+        ref: `
+            <div class="repeater-item">
+                <button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button>
+                <div class="grid-2">
+                    <div class="form-group"><label>Name *</label><input type="text" class="i-ref-name req" placeholder="Bailey Dupont"></div>
+                    <div class="form-group"><label>Title & Company *</label><input type="text" class="i-ref-title req" placeholder="Wardiere Inc. / CEO"></div>
+                    <div class="form-group"><label>Phone</label><input type="tel" class="i-ref-phone" placeholder="123-456-7890"></div>
+                    <div class="form-group"><label>Email</label><input type="email" class="i-ref-email" placeholder="hello@reallygreatsite.com"></div>
+                </div>
+            </div>`
+    };
+
+    // --- PHOTO UPLOAD LOGIC ---
+    let imgData = "";
+    document.getElementById('in-photo').addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(evt) { imgData = evt.target.result; };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+
+    // --- ADD FIELDS ---
+    function addRepeater(type) {
+        document.getElementById(type + '-container').insertAdjacentHTML('beforeend', tmpl[type]);
+    }
+
+    // Initialize with blank fields
+    window.onload = () => {
+        addRepeater('edu'); addRepeater('exp');
+        addRepeater('skill'); addRepeater('lang'); addRepeater('ref');
+    };
+
+    // --- VALIDATE AND RENDER ---
+    function processForm() {
+        const alertBox = document.getElementById('alert-banner');
+        let valid = true;
+
+        // Reset errors
+        document.querySelectorAll('.error-border').forEach(el => el.classList.remove('error-border'));
+
+        // Check required fields
+        document.querySelectorAll('.req').forEach(el => {
+            if (el.type === 'file') {
+                if (!imgData) { valid = false; el.classList.add('error-border'); }
+            } else {
+                if (el.value.trim() === '') { valid = false; el.classList.add('error-border'); }
+            }
+        });
+
+        if (!valid) {
+            alertBox.style.display = 'block';
+            window.scrollTo({top: 0, behavior: 'smooth'});
+            return;
+        }
+
+        alertBox.style.display = 'none';
+
+        // 1. Static Info
+        document.getElementById('out-photo').src = imgData;
+        document.getElementById('out-name').innerText = document.getElementById('in-name').value;
+        document.getElementById('out-title').innerText = document.getElementById('in-title').value;
+        document.getElementById('out-phone').innerText = document.getElementById('in-phone').value;
+        document.getElementById('out-email').innerText = document.getElementById('in-email').value;
+        document.getElementById('out-web').innerText = document.getElementById('in-web').value;
+        document.getElementById('out-loc').innerText = document.getElementById('in-loc').value;
+        document.getElementById('out-about').innerText = document.getElementById('in-about').value;
+
+        // 2. Education (Sidebar)
+        let eduHTML = "";
+        document.querySelectorAll('#edu-container .repeater-item').forEach(item => {
+            let deg = item.querySelector('.i-edu-deg').value;
+            let uni = item.querySelector('.i-edu-uni').value;
+            let date = item.querySelector('.i-edu-date').value;
+            let gpa = item.querySelector('.i-edu-gpa').value;
+            let gpaStr = gpa ? `<p class="side-gpa">${gpa}</p>` : "";
+            
+            eduHTML += `
+                <div style="margin-bottom: 12px;">
+                    <p class="side-text side-bold">${deg}</p>
+                    <p class="side-text">${uni}</p>
+                    <p class="side-edu-date">${date}</p>
+                    ${gpaStr}
+                </div>`;
+        });
+        document.getElementById('out-edu').innerHTML = eduHTML;
+
+        // 3. Experience (Main)
+        let expHTML = "";
+        document.querySelectorAll('#exp-container .repeater-item').forEach(item => {
+            let start = item.querySelector('.i-exp-start').value;
+            let end = item.querySelector('.i-exp-end').value;
+            let title = item.querySelector('.i-exp-title').value;
+            let comp = item.querySelector('.i-exp-comp').value;
+            let desc = item.querySelector('.i-exp-desc').value;
+            
+            // Format bullets
+            let bullets = desc.split('\n').filter(x => x.trim()).map(x => `<li>${x.trim()}</li>`).join('');
+
+            expHTML += `
+                <div class="exp-row">
+                    <div class="exp-dates">${start}<br>-<br>${end}</div>
+                    <div class="exp-details">
+                        <h4 class="exp-title">${title}</h4>
+                        <p class="exp-company">${comp}</p>
+                        <ul class="exp-bullets">${bullets}</ul>
+                    </div>
+                </div>`;
+        });
+        document.getElementById('out-exp').innerHTML = expHTML;
+
+        // 4. Skills & Languages
+        let skillHTML = "";
+        document.querySelectorAll('.i-skill-val').forEach(el => { if(el.value) skillHTML += `<li>${el.value}</li>`; });
+        document.getElementById('out-skill').innerHTML = skillHTML;
+
+        let langHTML = "";
+        document.querySelectorAll('.i-lang-val').forEach(el => { if(el.value) langHTML += `<li>${el.value}</li>`; });
+        document.getElementById('out-lang').innerHTML = langHTML;
+
+        // 5. References
+        let refHTML = "";
+        document.querySelectorAll('#ref-container .repeater-item').forEach(item => {
+            let name = item.querySelector('.i-ref-name').value;
+            let title = item.querySelector('.i-ref-title').value;
+            let phone = item.querySelector('.i-ref-phone').value;
+            let email = item.querySelector('.i-ref-email').value;
+
+            refHTML += `
+                <div class="ref-item">
+                    <h4 class="ref-name">${name}</h4>
+                    <p class="ref-title">${title}</p>
+                    ${phone ? `<p class="ref-contact"><b>Phone:</b> ${phone}</p>` : ''}
+                    ${email ? `<p class="ref-contact"><b>Email:</b> ${email}</p>` : ''}
+                </div>`;
+        });
+        document.getElementById('out-ref').innerHTML = refHTML;
+
+        // Show Preview
+        document.getElementById('form-view').style.display = 'none';
+        document.getElementById('preview-view').style.display = 'flex';
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    // --- VIEW TOGGLE & PDF ---
+    function goBack() {
+        document.getElementById('preview-view').style.display = 'none';
+        document.getElementById('form-view').style.display = 'block';
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    function savePdf() {
+        const element = document.getElementById('resume-paper');
+        const opt = {
+            margin:       0,
+            filename:     'JulianaSilva_Resume.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'px', format: [800, 1131], orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+
+</body>
+</html>
