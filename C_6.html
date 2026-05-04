@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimalist Corporate Resume Builder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- GLOBAL & FORM STYLES --- */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #e9ecef; margin: 0; padding: 20px; color: #333; }
+        * { box-sizing: border-box; }
+        .wrapper { max-width: 1000px; margin: 0 auto; }
+        button { cursor: pointer; font-family: inherit; }
+        
+        #formView, #previewView { border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; }
+        #formView { background: white; padding: 30px; display: block;}
+        
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        
+        /* Validation Alerts */
+        #validationAlert { display: none; background: #ffebee; color: #c62828; padding: 15px; border-radius: 4px; font-weight: bold; margin-bottom: 20px; }
+        .has-error { border: 2px solid red !important; }
+
+        .form-block { margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6; }
+        .block-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: bold; font-size: 1.1em; text-transform: uppercase; }
+        
+        /* Heading with "+" button logic for repeatable points */
+        .btn-add { background: #111; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight: bold; }
+        
+        label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: bold; }
+        input, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        textarea { height: 80px; resize: vertical; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        /* Repeating Fields styling */
+        .dynamic-row { position: relative; border-left: 3px solid #1E3A6A; padding-left: 15px; margin-bottom: 15px; background: white; padding: 15px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .btn-remove { position: absolute; top: 10px; right: 10px; background: #d9534f; color: white; border: none; padding: 5px; border-radius: 4px; font-size: 12px; }
+
+        .btn-main { display: block; width: 100%; max-width: 300px; margin: 30px auto 0; padding: 15px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; }
+
+        /* Photo Upload & Preview */
+        .photo-area { text-align: center; margin-bottom: 20px; }
+        .photo-preview-form { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #eee; display: none; margin: 0 auto 10px; }
+        
+        /* --- PREVIEW STYLES (MATCHING CORPORATE LOOK) --- */
+        #previewView { display: none; flex-direction: column; align-items: center; }
+        .preview-controls { margin-bottom: 20px; display: flex; gap: 15px; }
+        .preview-controls button { padding: 10px 20px; font-size: 16px; border: none; border-radius: 4px; color: white; font-weight: bold; }
+        .btn-edit { background: #6c757d; }
+        .btn-download { background: #007bff; }
+        
+        /* Resume Canvas for @media print styling and falling back to library on connection */
+        #resumeCanvas { width: 210mm; min-height: 297mm; background: white; padding: 40px; box-sizing: border-box; display: grid; grid-template-columns: 1fr 3fr; gap: 40px; border: 1px solid #ddd;}
+        
+        /* Sidebar (Grey-Cream with contact & skills) */
+        .col-left { background: #f0eae1; padding: 30px; display: flex; flex-direction: column; border-radius: 6px; color: #111; }
+        .photo-sidebar-container { text-align: center; margin-bottom: 20px; }
+        .photo-sidebar { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 5px solid white; background: #eee; }
+        
+        .side-heading { background: #cbd5e1; color: #333; padding: 5px 15px; font-size: 13px; font-weight: bold; text-transform: uppercase; margin: 20px 0 10px 0; border-radius: 2px; }
+        .side-text { font-size: 12px; margin: 5px 0; word-break: break-word;}
+        .side-list { list-style: none; padding: 0; margin: 0; font-size: 13px; }
+        .side-list li { margin-bottom: 6px; color: #444; }
+
+        /* Main Content (Timeline style for experience & education) */
+        .col-right { background: white; }
+        .res-name { font-size: 38px; text-transform: uppercase; margin: 0 0 5px 0; color: #111; font-weight: 700; }
+        .res-title { font-size: 18px; text-transform: uppercase; color: #666; margin: 0 0 25px 0; letter-spacing: 2px;}
+        
+        .section-heading { font-size: 18px; text-transform: uppercase; border-bottom: 1px solid #ccc; margin: 25px 0 15px 0; padding-bottom: 5px; font-weight: bold; color: #333; }
+        .res-summary { font-size: 13px; line-height: 1.6; text-align: justify; color: #444;}
+        
+        /* Education/Experience items with clean timeline dots */
+        .timeline { border-left: 2px solid #cbd5e1; padding-left: 20px; position: relative; margin-left: 5px;}
+        .timeline-item { margin-bottom: 20px; position: relative; }
+        .timeline-item::before { content: ""; position: absolute; left: -26px; top: 3px; width: 10px; height: 10px; border-radius: 50%; background: #1E3A6A; border: 2px solid white; z-index: 10;}
+        .tl-header { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; font-weight: bold;}
+        .tl-date { color: #666; font-size: 13px; }
+        .tl-sub { font-style: italic; font-size: 13px; color: #666; margin-bottom: 8px;}
+        .tl-perc { font-size: 12px; color: #1E3A6A; font-weight: bold; display: block; margin-top: 2px;}
+        .tl-bullets { margin: 0; padding-left: 15px; font-size: 13px; color: #444; line-height: 1.5; }
+        
+        .ref-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 13px; }
+        .ref-item { font-size: 12px; line-height: 1.5;}
+        
+        /* Fallback illustrative placeholder icon (Woman headshot) */
+        .placeholder-icon-out { width: 100%; height: 100%; color: #999; display: flex; align-items: center; justify-content: center; }
+        
+        /* Print Styles: triggers Browser's native PDF function and formats for A4 */
+        @media print {
+            body { background: white; margin: 0; padding: 0; visibility: hidden; }
+            .wrapper, #formView, .preview-controls { display: none !important; }
+            #previewView { display: block; }
+            #resumeCanvas {
+                position: absolute; left: 0; top: 0; width: 100%; height: 100%; box-shadow: none; border: none; visibility: visible; 
+                width: 210mm; min-height: 297mm; /* Ensure A4 size */
+            }
+            .col-left { -webkit-print-color-adjust: exact; print-color-adjust: exact; background-color: #f0eae1 !important; }
+            .res-name { color: #111 !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div id="formView">
+        <div class="header">
+            <h1>Minimalist Resume Creator</h1>
+            <p>Blank form. Missed fields will show red alert validation and download in PDF.</p>
+        </div>
+
+        <div id="validationAlert">Please fill out all the highlighted required fields!</div>
+
+        <form id="mainForm">
+            <div class="form-block">
+                <div class="block-title">1. Profile & Contact Details</div>
+                <div class="photo-area">
+                    <img id="f-photo-preview" class="photo-preview-form" src="" alt="Photo Preview">
+                    <input type="file" id="f-photo" accept="image/*">
+                    <label>Upload Photo</label>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" id="f-name" class="req" placeholder="Juliana Silva">
+                    </div>
+                    <div class="form-group">
+                        <label>Job Title *</label>
+                        <input type="text" id="f-title" class="req" placeholder="Sales Representative">
+                    </div>
+                    <div class="form-group">
+                        <label>Mobile No *</label>
+                        <input type="tel" id="f-phone" class="req" placeholder="+123-456-7890">
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="f-email" class="req" placeholder="hello@reallygreatsite.com">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Location (Full Address) *</label>
+                        <input type="text" id="f-loc" class="req" placeholder="123 Anywhere St., Any City">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-block">
+                <div class="block-title">2. About Me</div>
+                <div class="form-group">
+                    <label>Summary *</label>
+                    <textarea id="f-summary" class="req" placeholder="Write a brief professional summary..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-block">
+                <div class="block-title"><span>3. Skills</span> <button type="button" class="btn-add" onclick="addrepeatingField('skill')">+</button></div>
+                <div id="skill-list" class="grid-2">
+                    </div>
+            </div>
+
+            <div class="form-block">
+                <div class="block-title"><span>4. Languages</span> <button type="button" class="btn-add" onclick="addrepeatingField('lang')">+</button></div>
+                <div id="lang-list" class="grid-2">
+                    </div>
+            </div>
+
+            <div class="form-block">
+                <div class="block-title"><span>5. Work Experience</span> <button type="button" class="btn-add" onclick="addrepeatingField('exp')">+</button></div>
+                <div id="exp-list">
+                    </div>
+            </div>
+
+            <div class="form-block">
+                <div class="block-title"><span>6. Education</span> <button type="button" class="btn-add" onclick="addrepeatingField('edu')">+</button></div>
+                <div id="edu-list">
+                    </div>
+            </div>
+
+            <div class="form-block">
+                <div class="block-title"><span>7. References</span> <button type="button" class="btn-add" onclick="addrepeatingField('ref')">+</button></div>
+                <div id="ref-list" class="grid-2">
+                    </div>
+            </div>
+
+            <button type="button" class="btn-main" onclick="buildResume()">Preview</button>
+        </form>
+    </div>
+</div>
+
+<div id="previewView">
+    <div class="preview-controls">
+        <button class="btn-edit" onclick="goEdit()">Edit Details</button>
+        <button class="btn-download" onclick="window.print()">Download PDF</button>
+    </div>
+
+    <div id="resumeCanvas">
+        <div class="col-left">
+            <div class="photo-sidebar-container">
+                <div id="out-photo-placeholder" class="placeholder-icon-out">
+                    <svg width="140" height="140" viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="70" cy="70" r="67.5" stroke="#fff" stroke-width="5"/>
+                    <circle cx="70" cy="60" r="25" fill="#aaa"/>
+                    <path d="M105 105C105 85.67 89.33 70 70 70C50.67 70 35 85.67 35 105V110H105V105Z" fill="#aaa"/>
+                    </svg>
+                </div>
+                <img id="out-photo" class="photo-sidebar" src="" alt="Profile Photo" style="display:none;">
+            </div>
+            
+            <div class="side-heading">Contact</div>
+            <div class="side-text" id="out-phone"></div>
+            <div class="side-text" id="out-email"></div>
+            <div class="side-text" id="out-loc"></div>
+
+            <div class="side-heading">Expertise</div>
+            <ul id="out-skill" class="side-list"></ul>
+
+            <div class="side-heading">Language</div>
+            <ul id="out-lang" class="side-list"></ul>
+        </div>
+
+        <div class="col-right">
+            <h1 class="res-name" id="out-name">Name</h1>
+            <h2 class="res-title" id="out-title">Title</h2>
+            
+            <div class="section-heading">About Me</div>
+            <div class="res-summary" id="out-summary">Summary text goes here.</div>
+
+            <div class="section-heading">Work Experience</div>
+            <div id="out-exp" class="timeline"></div>
+
+            <div class="section-heading">Education</div>
+            <div id="out-edu" class="timeline"></div>
+
+            <div class="section-heading">References</div>
+            <div id="out-ref" class="ref-grid"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Repeating Field Templates
+    const templates = {
+        skill: `<div class="dynamic-row" style="padding:10px;"><button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button><input type="text" class="req-rep skill-in" placeholder="Skill (e.g. Sales Strategies)" style="margin:0;"></div>`,
+        lang: `<div class="dynamic-row" style="padding:10px;"><button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button><input type="text" class="req-rep lang-in" placeholder="Language (e.g. English)" style="margin:0;"></div>`,
+        exp: `<div class="dynamic-row"><button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button><div class="grid-2"><input type="text" class="req-rep exp-pos" placeholder="Job Title"><input type="text" class="req-rep exp-date" placeholder="Date/Year (Oct 2019 - Present)"></div><input type="text" class="req-rep exp-comp" placeholder="Company | Location"><textarea class="req-rep exp-desc" placeholder="Responsibilities (one bullet point per line)"></textarea></div>`,
+        edu: `<div class="dynamic-row"><button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button><div class="grid-2"><input type="text" class="req-rep edu-deg" placeholder="Degree / Certificate"><input type="text" class="req-rep edu-date" placeholder="Date/Year (2016-2020)"></div><input type="text" class="req-rep edu-uni" placeholder="University | School Name"><input type="text" class="req-rep edu-perc" placeholder="Percentage Subheading (Optional)"></div>`,
+        ref: `<div class="dynamic-row"><button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button><input type="text" class="req-rep ref-name" placeholder="Name"><input type="text" class="req-rep ref-title" placeholder="Title & Company"><input type="tel" class="ref-phone" placeholder="Phone (Optional)"><input type="email" class="ref-email" placeholder="Email (Optional)"></div>`
+    };
+
+    // Photo input handling for form preview and future preview view push
+    let photoDataURL = "";
+    document.getElementById('f-photo').addEventListener('change', function(e) {
+        if(e.target.files && e.target.files[0]) {
+            let reader = new FileReader();
+            reader.onload = function(evt) {
+                photoDataURL = evt.target.result;
+                const formPreview = document.getElementById('f-photo-preview');
+                formPreview.src = photoDataURL;
+                formPreview.style.display = 'block';
+            }
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+
+    // Handle adding dynamic fields
+    function addrepeatingField(type) {
+        document.getElementById(type + '-list').insertAdjacentHTML('beforeend', templates[type]);
+    }
+
+    // Init with fields
+    addrepeatingField('exp'); addrepeatingField('edu'); addrepeatingField('skill'); addrepeatingField('lang'); addrepeatingField('ref');
+
+    function buildResume() {
+        let valid = true;
+        document.querySelectorAll('.has-error').forEach(e => e.classList.remove('has-error'));
+
+        // Basic fields validation
+        document.querySelectorAll('.req').forEach(el => {
+            if (!el.value.trim()) { valid = false; el.classList.add('has-error'); }
+        });
+
+        // Repeating fields validation (at least one row filled)
+        ['skill-list', 'lang-list', 'exp-list', 'edu-list', 'ref-list'].forEach(listId => {
+            const list = document.getElementById(listId);
+            if (list.children.length === 0) {
+                valid = false;
+                list.previousElementSibling.classList.add('has-error');
+            }
+        });
+
+        // If validation fails, show alert on form or on preview page? The request says alert on detail page *after* filing. This usually means a standard red banner. Let's make one.
+        if(!valid) {
+            document.getElementById('validationAlert').style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+        document.getElementById('validationAlert').style.display = 'none';
+
+        // 1. Populate Photo
+        const outPhoto = document.getElementById('out-photo');
+        const outPlaceholder = document.getElementById('out-photo-placeholder');
+        if(photoDataURL) {
+            outPhoto.src = photoDataURL;
+            outPhoto.style.display = 'inline-block';
+            outPlaceholder.style.display = 'none';
+        } else {
+            outPhoto.style.display = 'none';
+            outPlaceholder.style.display = 'flex';
+        }
+
+        // 2. Static Details
+        document.getElementById('out-name').innerText = document.getElementById('f-name').value;
+        document.getElementById('out-title').innerText = document.getElementById('f-title').value;
+        document.getElementById('out-phone').innerText = `📞 ${document.getElementById('f-phone').value}`;
+        document.getElementById('out-email').innerText = `✉️ ${document.getElementById('f-email').value}`;
+        document.getElementById('out-loc').innerText = `📍 ${document.getElementById('f-loc').value}`;
+        document.getElementById('out-summary').innerText = document.getElementById('f-summary').value;
+
+        // 3. Dynamic Lists
+        
+        // Skills & Langs (Simple list)
+        function populateSimpleList(listId, targetId, inputCls) {
+            const target = document.getElementById(targetId);
+            target.innerHTML = '';
+            document.querySelectorAll(`#${listId} .${inputCls}`).forEach(input => {
+                target.innerHTML += `<li>${input.value}</li>`;
+            });
+        }
+        populateSimpleList('skill-list', 'out-skill', 'skill-in');
+        populateSimpleList('lang-list', 'out-lang', 'lang-in');
+
+        // References
+        const outRef = document.getElementById('out-ref');
+        outRef.innerHTML = '';
+        document.querySelectorAll('#ref-list .dynamic-row').forEach(row => {
+            const name = row.querySelector('.ref-name').value;
+            const title = row.querySelector('.ref-title').value;
+            const phone = row.querySelector('.ref-phone').value;
+            const email = row.querySelector('.ref-email').value;
+            outRef.innerHTML += `<div class="ref-item"><strong>${name}</strong><br>${title}${phone ? `<br>Ph: ${phone}` : ''}${email ? `<br>Email: ${email}` : ''}</div>`;
+        });
+
+        // Experience (Timeline style)
+        const outExp = document.getElementById('out-exp');
+        outExp.innerHTML = '';
+        document.querySelectorAll('#exp-list .dynamic-row').forEach(row => {
+            const pos = row.querySelector('.exp-pos').value;
+            const date = row.querySelector('.exp-date').value;
+            const comp = row.querySelector('.exp-comp').value;
+            const desc = row.querySelector('.exp-desc').value;
+            
+            const bullets = desc.split('\n').filter(b => b.trim()).map(b => `<li>${b}</li>`).join('');
+
+            outExp.innerHTML += `
+                <div class="timeline-item">
+                    <div class="tl-header">
+                        <div>${pos}</div>
+                        <div class="tl-date">${date}</div>
+                    </div>
+                    <div class="tl-sub">${comp}</div>
+                    <ul class="tl-bullets">${bullets}</ul>
+                </div>`;
+        });
+
+        // Education (Timeline style)
+        const outEdu = document.getElementById('out-edu');
+        outEdu.innerHTML = '';
+        document.querySelectorAll('#edu-list .dynamic-row').forEach(row => {
+            const deg = row.querySelector('.edu-deg').value;
+            const date = row.querySelector('.edu-date').value;
+            const uni = row.querySelector('.edu-uni').value;
+            const perc = row.querySelector('.edu-perc').value;
+            
+            outEdu.innerHTML += `
+                <div class="timeline-item">
+                    <div class="tl-header">
+                        <div>${deg}</div>
+                        <div class="tl-date">${date}</div>
+                    </div>
+                    <div class="tl-sub">${uni}</div>
+                    ${perc ? `<span class="tl-perc">${perc}</span>` : ''}
+                </div>`;
+        });
+
+        // Transition Views
+        document.getElementById('formView').style.display = 'none';
+        document.getElementById('previewView').style.display = 'flex';
+        window.scrollTo(0, 0);
+    }
+
+    function goEdit() {
+        document.getElementById('previewView').style.display = 'none';
+        document.getElementById('formView').style.display = 'block';
+        window.scrollTo(0, 0);
+    }
+</script>
+
+</body>
+</html>

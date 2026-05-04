@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated Resume Builder</title>
+    <style>
+        /* --- GLOBAL & FORM STYLES --- */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #e9ecef; margin: 0; padding: 20px; color: #333; }
+        .wrapper { max-width: 1000px; margin: 0 auto; }
+        button { cursor: pointer; font-family: inherit; }
+        
+        #form-section { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        
+        .alert { display: none; background: #ffebee; color: #c62828; padding: 15px; border-radius: 4px; font-weight: bold; margin-bottom: 20px; }
+        .error-border { border: 2px solid #c62828 !important; }
+
+        .form-block { margin-bottom: 20px; background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #dee2e6; }
+        .block-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: bold; font-size: 1.1em; text-transform: uppercase; }
+        
+        .btn-add { background: #0275d8; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight: bold; }
+        
+        label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: bold; }
+        input, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        textarea { height: 80px; resize: vertical; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .dynamic-row { position: relative; border-left: 3px solid #0275d8; padding-left: 15px; margin-bottom: 15px; background: white; padding: 15px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .btn-remove { position: absolute; top: 10px; right: 10px; background: #d9534f; color: white; border: none; padding: 5px; border-radius: 4px; font-size: 12px; }
+
+        .btn-main { display: block; width: 100%; padding: 15px; background: #5cb85c; color: white; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; margin-top: 20px; }
+
+        /* --- PREVIEW STYLES --- */
+        #preview-section { display: none; flex-direction: column; align-items: center; }
+        .preview-controls { margin-bottom: 20px; display: flex; gap: 15px; }
+        .preview-controls button { padding: 10px 20px; font-size: 16px; border: none; border-radius: 4px; color: white; font-weight: bold; }
+        .btn-edit { background: #6c757d; }
+        .btn-download { background: #0275d8; }
+
+        /* Resume A4 Canvas */
+        #resume-canvas { width: 210mm; min-height: 297mm; background: white; display: flex; box-shadow: 0 0 15px rgba(0,0,0,0.2); box-sizing: border-box; }
+        
+        /* Left Column */
+        .col-left { flex: 0 0 35%; background: #e2e2e2; padding: 40px 25px; display: flex; flex-direction: column; align-items: center; }
+        .photo-img { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 5px solid white; margin-bottom: 20px; background: #ccc; }
+        
+        .heading-left { width: 100%; border-bottom: 2px solid #333; margin: 20px 0 10px 0; font-size: 16px; text-transform: uppercase; font-weight: bold; padding-bottom: 5px; }
+        .text-sm { font-size: 13px; margin: 5px 0; width: 100%; word-break: break-word;}
+        .list-style { width: 100%; padding-left: 20px; margin: 0; font-size: 13px; }
+        .list-style li { margin-bottom: 5px; }
+
+        /* Right Column */
+        .col-right { flex: 1; padding: 40px; background: white; }
+        .res-name { font-size: 38px; text-transform: uppercase; margin: 0 0 5px 0; color: #333; font-weight: 900; line-height: 1; }
+        .res-title { font-size: 18px; text-transform: uppercase; color: #666; margin: 0 0 25px 0; letter-spacing: 2px; }
+        
+        .heading-right { font-size: 18px; text-transform: uppercase; border-bottom: 2px solid #ccc; margin: 25px 0 15px 0; padding-bottom: 5px; font-weight: bold; color: #333; }
+        .summary-text { font-size: 14px; line-height: 1.6; color: #444; }
+
+        /* Timeline Items */
+        .timeline-item { margin-bottom: 20px; }
+        .tl-header { display: flex; justify-content: space-between; align-items: baseline; font-weight: bold; font-size: 15px; color: #333; margin-bottom: 3px; }
+        .tl-sub { font-size: 14px; font-style: italic; color: #666; margin-bottom: 5px; }
+        .tl-bullets { margin: 0; padding-left: 15px; font-size: 13px; color: #444; line-height: 1.5; }
+
+        /* References Grid */
+        .ref-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .ref-box { font-size: 12px; color: #444; line-height: 1.4; }
+        .ref-name { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 2px; }
+
+        /* --- PRINT STYLES FOR NATIVE PDF SAVING --- */
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .wrapper, #form-section, .preview-controls { display: none !important; }
+            #preview-section { display: block; }
+            #resume-canvas { width: 100%; height: 100%; box-shadow: none; margin: 0; page-break-after: avoid; }
+            .col-left { background-color: #e2e2e2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div id="form-section">
+        <div class="header">
+            <h1>Resume Builder</h1>
+            <p>Native Print-to-PDF Version (No external dependencies)</p>
+        </div>
+
+        <div id="error-alert" class="alert">Please fill in the required fields highlighted in red.</div>
+
+        <form id="main-form">
+            <div class="form-block">
+                <div class="block-title">1. Basic Details</div>
+                <div class="grid-2">
+                    <div>
+                        <label>Profile Photo *</label>
+                        <input type="file" id="f-photo" accept="image/*" class="req">
+                    </div>
+                    <div>
+                        <label>Full Name *</label>
+                        <input type="text" id="f-name" class="req" placeholder="Donna Stroupe">
+                    </div>
+                    <div>
+                        <label>Job Title *</label>
+                        <input type="text" id="f-title" class="req" placeholder="Sales Representative">
+                    </div>
+                    <div>
+                        <label>Phone *</label>
+                        <input type="text" id="f-phone" class="req" placeholder="+123-456-7890">
+                    </div>
+                    <div>
+                        <label>Email *</label>
+                        <input type="email" id="f-email" class="req" placeholder="hello@site.com">
+                    </div>
+                    <div>
+                        <label>Location *</label>
+                        <input type="text" id="f-loc" class="req" placeholder="Any City, ST 12345">
+                    </div>
+                </div>
+                <label>Professional Summary *</label>
+                <textarea id="f-summary" class="req" placeholder="Write a short summary..."></textarea>
+            </div>
+
+            <div class="form-block">
+                <div class="block-title"><span>2. Education</span> <button type="button" class="btn-add" onclick="add('edu')">+ Add</button></div>
+                <div id="edu-list"></div>
+            </div>
+
+            <div class="form-block">
+                <div class="block-title"><span>3. Experience</span> <button type="button" class="btn-add" onclick="add('exp')">+ Add</button></div>
+                <div id="exp-list"></div>
+            </div>
+
+            <div class="grid-2">
+                <div class="form-block">
+                    <div class="block-title"><span>4. Skills</span> <button type="button" class="btn-add" onclick="add('skill')">+</button></div>
+                    <div id="skill-list"></div>
+                </div>
+                <div class="form-block">
+                    <div class="block-title"><span>5. Languages</span> <button type="button" class="btn-add" onclick="add('lang')">+</button></div>
+                    <div id="lang-list"></div>
+                </div>
+            </div>
+
+            <div class="form-block">
+                <div class="block-title"><span>6. References</span> <button type="button" class="btn-add" onclick="add('ref')">+ Add</button></div>
+                <div id="ref-list" class="grid-2"></div>
+            </div>
+
+            <button type="button" class="btn-main" onclick="buildResume()">Preview Resume</button>
+        </form>
+    </div>
+</div>
+
+<div id="preview-section">
+    <div class="preview-controls">
+        <button class="btn-edit" onclick="goEdit()">Back to Edit</button>
+        <button class="btn-download" onclick="window.print()">Download PDF (Print)</button>
+    </div>
+
+    <div id="resume-canvas">
+        <div class="col-left">
+            <img id="out-photo" class="photo-img" src="" alt="Profile">
+            
+            <div class="heading-left">Contact</div>
+            <div class="text-sm">📞 <span id="out-phone"></span></div>
+            <div class="text-sm">📧 <span id="out-email"></span></div>
+            <div class="text-sm">📍 <span id="out-loc"></span></div>
+
+            <div class="heading-left">Education</div>
+            <div id="out-edu"></div>
+
+            <div class="heading-left">Skills</div>
+            <ul id="out-skill" class="list-style"></ul>
+
+            <div class="heading-left">Languages</div>
+            <ul id="out-lang" class="list-style"></ul>
+        </div>
+
+        <div class="col-right">
+            <h1 class="res-name" id="out-name">Name</h1>
+            <h2 class="res-title" id="out-title">Title</h2>
+            
+            <div class="heading-right">Profile</div>
+            <div class="summary-text" id="out-summary"></div>
+
+            <div class="heading-right">Work Experience</div>
+            <div id="out-exp"></div>
+
+            <div class="heading-right">References</div>
+            <div id="out-ref" class="ref-grid"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Templates for dynamic rows
+    const tmpl = {
+        edu: `<div class="dynamic-row"><button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button>
+                <input type="text" class="t-edu-deg req" placeholder="Degree (e.g. BA Business)">
+                <input type="text" class="t-edu-uni req" placeholder="University (e.g. Borcelle Uni)">
+                <div class="grid-2">
+                    <input type="text" class="t-edu-date req" placeholder="Years (2016-2020)">
+                    <input type="text" class="t-edu-gpa" placeholder="Percentage/GPA">
+                </div>
+              </div>`,
+        exp: `<div class="dynamic-row"><button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button>
+                <div class="grid-2">
+                    <input type="text" class="t-exp-pos req" placeholder="Job Title">
+                    <input type="text" class="t-exp-date req" placeholder="Dates (2020 - Present)">
+                </div>
+                <input type="text" class="t-exp-comp req" placeholder="Company Name">
+                <textarea class="t-exp-desc req" placeholder="Responsibilities (one per line)"></textarea>
+              </div>`,
+        skill: `<div class="dynamic-row" style="padding:10px;"><button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button>
+                <input type="text" class="t-skill req" placeholder="e.g. B2B Sales" style="margin:0;"></div>`,
+        lang: `<div class="dynamic-row" style="padding:10px;"><button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button>
+                <input type="text" class="t-lang req" placeholder="e.g. English" style="margin:0;"></div>`,
+        ref: `<div class="dynamic-row"><button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button>
+                <input type="text" class="t-ref-name req" placeholder="Name">
+                <input type="text" class="t-ref-title req" placeholder="Title / Company">
+                <input type="text" class="t-ref-phone" placeholder="Phone">
+                <input type="text" class="t-ref-email" placeholder="Email">
+              </div>`
+    };
+
+    // Photo handler
+    let imgBase64 = "";
+    document.getElementById('f-photo').addEventListener('change', function(e) {
+        if(e.target.files[0]) {
+            let reader = new FileReader();
+            reader.onload = (event) => { imgBase64 = event.target.result; };
+            reader.readAsDataURL(e.target.files[0]);
+        }
+    });
+
+    // Add fields
+    function add(type) {
+        document.getElementById(type + '-list').insertAdjacentHTML('beforeend', tmpl[type]);
+    }
+
+    // Init defaults
+    window.onload = () => { add('edu'); add('exp'); add('skill'); add('lang'); add('ref'); };
+
+    function buildResume() {
+        let valid = true;
+        document.querySelectorAll('.error-border').forEach(e => e.classList.remove('error-border'));
+
+        // Basic Validation
+        document.querySelectorAll('.req').forEach(el => {
+            if(el.type === 'file' && !imgBase64) { valid = false; el.classList.add('error-border'); }
+            else if (el.type !== 'file' && !el.value.trim()) { valid = false; el.classList.add('error-border'); }
+        });
+
+        if(!valid) {
+            document.getElementById('error-alert').style.display = 'block';
+            window.scrollTo(0,0);
+            return;
+        }
+        document.getElementById('error-alert').style.display = 'none';
+
+        // 1. Static
+        document.getElementById('out-photo').src = imgBase64;
+        document.getElementById('out-name').innerText = document.getElementById('f-name').value;
+        document.getElementById('out-title').innerText = document.getElementById('f-title').value;
+        document.getElementById('out-phone').innerText = document.getElementById('f-phone').value;
+        document.getElementById('out-email').innerText = document.getElementById('f-email').value;
+        document.getElementById('out-loc').innerText = document.getElementById('f-loc').value;
+        document.getElementById('out-summary').innerText = document.getElementById('f-summary').value;
+
+        // 2. Edu
+        let eduHTML = '';
+        document.querySelectorAll('#edu-list .dynamic-row').forEach(row => {
+            eduHTML += `<div class="text-sm">
+                            <strong>${row.querySelector('.t-edu-deg').value}</strong><br>
+                            ${row.querySelector('.t-edu-uni').value}<br>
+                            <span style="color:#666">${row.querySelector('.t-edu-date').value}</span>
+                            ${row.querySelector('.t-edu-gpa').value ? `<br><b>${row.querySelector('.t-edu-gpa').value}</b>` : ''}
+                        </div><br>`;
+        });
+        document.getElementById('out-edu').innerHTML = eduHTML;
+
+        // 3. Exp
+        let expHTML = '';
+        document.querySelectorAll('#exp-list .dynamic-row').forEach(row => {
+            let bullets = row.querySelector('.t-exp-desc').value.split('\n').filter(b=>b.trim()).map(b=>`<li>${b}</li>`).join('');
+            expHTML += `<div class="timeline-item">
+                            <div class="tl-header"><span>${row.querySelector('.t-exp-pos').value}</span> <span>${row.querySelector('.t-exp-date').value}</span></div>
+                            <div class="tl-sub">${row.querySelector('.t-exp-comp').value}</div>
+                            <ul class="tl-bullets">${bullets}</ul>
+                        </div>`;
+        });
+        document.getElementById('out-exp').innerHTML = expHTML;
+
+        // 4. Skills & Langs
+        document.getElementById('out-skill').innerHTML = Array.from(document.querySelectorAll('.t-skill')).map(i => `<li>${i.value}</li>`).join('');
+        document.getElementById('out-lang').innerHTML = Array.from(document.querySelectorAll('.t-lang')).map(i => `<li>${i.value}</li>`).join('');
+
+        // 5. Refs
+        let refHTML = '';
+        document.querySelectorAll('#ref-list .dynamic-row').forEach(row => {
+            refHTML += `<div class="ref-box">
+                            <div class="ref-name">${row.querySelector('.t-ref-name').value}</div>
+                            <div>${row.querySelector('.t-ref-title').value}</div>
+                            ${row.querySelector('.t-ref-phone').value ? `<div>P: ${row.querySelector('.t-ref-phone').value}</div>` : ''}
+                            ${row.querySelector('.t-ref-email').value ? `<div>E: ${row.querySelector('.t-ref-email').value}</div>` : ''}
+                        </div>`;
+        });
+        document.getElementById('out-ref').innerHTML = refHTML;
+
+        // Toggle Views
+        document.getElementById('form-section').style.display = 'none';
+        document.getElementById('preview-section').style.display = 'flex';
+        window.scrollTo(0,0);
+    }
+
+    function goEdit() {
+        document.getElementById('preview-section').style.display = 'none';
+        document.getElementById('form-section').style.display = 'block';
+        window.scrollTo(0,0);
+    }
+</script>
+</body>
+</html>

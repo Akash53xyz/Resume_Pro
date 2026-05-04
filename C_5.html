@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juliana Silva Resume Builder</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+/* CSS to match professional, modern corporate aesthetic and layout */
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; color: #333; }
+.container { max-width: 1200px; margin: 0 auto; display: flex; gap: 20px; }
+
+/* Alert Section */
+#alert-banner { display: none; background-color: #f2dede; color: #a94442; border: 1px solid #ebccd1; padding: 15px; border-radius: 4px; margin-bottom: 20px; text-align: center; font-weight: bold; }
+.missed-field-item { text-transform: uppercase; font-size: 0.8em;}
+
+/* Form Styling */
+#form-container { flex: 1; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+#form-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+.form-section { margin-bottom: 20px; }
+.form-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
+.form-heading h2 { font-size: 1.2em; text-transform: uppercase; color: #1E3A6A; }
+.add-btn { background-color: #1E3A6A; color: white; border: none; padding: 5px 10px; font-size: 1.2em; border-radius: 4px; cursor: pointer; transition: background-color 0.2s; }
+.add-btn:hover { background-color: #33558B; }
+.remove-btn { background-color: #d9534f; color: white; border: none; padding: 2px 5px; font-size: 0.8em; border-radius: 4px; cursor: pointer; float: right; margin-top: 5px; margin-left: 10px;}
+.remove-btn:hover { background-color: #c9302c; }
+.form-group { margin-bottom: 15px; }
+label { display: block; margin-bottom: 5px; font-weight: bold; }
+input[type="text"], input[type="email"], input[type="tel"], textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+textarea { height: 100px; resize: vertical; }
+.repeating-point { border: 1px dashed #bbb; padding: 10px; margin-bottom: 10px; position: relative; border-radius: 4px; }
+.entry-field { margin-bottom: 10px; }
+
+/* Resume Preview Styling (to strictly match image_14.png aesthetic) */
+#preview-container { flex: 1; display: none; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative;}
+#resume-preview { width: 100%; margin: 0 auto; color: #333; font-size: 0.9em; }
+
+.preview-header-bar { background-color: #1E3A6A; color: white; padding: 20px; text-align: center; position: relative; }
+.p-name { font-size: 2.2em; text-transform: uppercase; margin-bottom: 5px; }
+.p-title { font-size: 1.2em; text-transform: uppercase; font-weight: normal; margin: 0; }
+.photo-frame { width: 140px; height: 140px; border-radius: 50%; border: 5px solid white; position: absolute; bottom: -70px; left: calc(50% - 70px); overflow: hidden; background-color: #eee; z-index: 10; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+.photo-frame img { width: 100%; height: 100%; object-fit: cover; }
+
+.preview-body { display: flex; margin-top: 80px; } /* Offset for photo frame */
+.preview-left-col { flex: 1; background-color: #F0F0F0; padding: 20px; }
+.preview-right-col { flex: 2; padding: 20px; position: relative; }
+
+.preview-left-col h3, .preview-right-col h3 { text-transform: uppercase; font-size: 1em; color: #1E3A6A; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; }
+.contact-line, .skill-item { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+.contact-line span, .skill-item span { font-weight: bold; color: #1E3A6A; }
+.skill-list, .lang-list { list-style: circle; padding-left: 20px; margin: 0; }
+.skill-list li, .lang-list li { margin-bottom: 5px; }
+
+.timeline-line { position: absolute; top: 0; left: 20px; height: 100%; width: 2px; background-color: #ddd; z-index: 1; }
+.timeline-entry { position: relative; padding-left: 50px; margin-bottom: 25px; z-index: 2; }
+.timeline-point { position: absolute; left: 11px; top: 0; width: 18px; height: 18px; border-radius: 50%; background-color: #fff; border: 3px solid #ddd; }
+.timeline-entry-header { display: flex; justify-content: space-between; align-items: baseline; }
+.timeline-entry-header h4 { color: #1E3A6A; font-size: 1.1em;}
+.timeline-entry-details { color: #555; font-size: 0.9em; font-style: italic; }
+.timeline-entry-content { margin-top: 10px; color: #333; }
+.percentage-line { font-style: italic; color: #1E3A6A; margin-top: 5px; display: block;}
+
+/* Red marker for missed details */
+.missed-detail-marker { color: #d9534f; font-weight: bold; border: 1px solid #f2dede; background-color: #fcf8e3; padding: 2px;}
+
+/* Photo form preview and label */
+#upload-btn-label { display: block; width: 100px; height: 100px; border-radius: 50%; border: 3px dashed #ddd; text-align: center; line-height: 100px; cursor: pointer; margin: 10px auto; color: #aaa;}
+#upload-btn-label:hover { border-color: #1E3A6A; color: #1E3A6A;}
+
+/* Main Action Buttons on Preview Page */
+#edit-details-btn, #download-pdf-btn { display: inline-block; padding: 10px 20px; font-size: 1em; border: none; border-radius: 4px; cursor: pointer; margin: 0 10px; color: white; transition: background-color 0.2s; }
+#edit-details-btn { background-color: #6c757d; }
+#edit-details-btn:hover { background-color: #5a6268; }
+#download-pdf-btn { background-color: #2E7D32; }
+#download-pdf-btn:hover { background-color: #1B5E20; }
+
+/* CSS to update form to preview watermark for user prompt */
+#form-to-preview-prompt { text-align: center; color: #aaa; margin: 40px auto; display: block;}
+#preview-actions { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div id="form-container">
+        <div id="form-header">
+            <h1>Resume Builder Form</h1>
+            <p>Fill in details, use '+' to add new items. All fields are required for a perfect resume.</p>
+        </div>
+        
+        <form id="resume-form">
+            <div class="form-section">
+                <div class="form-heading">
+                    <h2>Personal & Contact Details</h2>
+                </div>
+                <div id="photo-preview-container">
+                    <input type="file" id="photo-input" accept="image/*" style="display:none;" required>
+                    <label for="photo-input" id="upload-btn-label">Upload</label>
+                    <img id="photo-form-preview" src="" alt="Photo Preview" style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid #ddd; display: none; margin: 10px auto; object-fit: cover;">
+                </div>
+                <div class="form-group">
+                    <label>Name*</label>
+                    <input type="text" id="full-name-input" placeholder="Juliana Silva" required>
+                </div>
+                <div class="form-group">
+                    <label>Professional Title*</label>
+                    <input type="text" id="title-input" placeholder="Sales Representative" required>
+                </div>
+                <div class="form-group multi-field-group">
+                    <input type="tel" id="mobile-input" placeholder="Mobile Number: 123-456-7890">
+                    <input type="email" id="email-input" placeholder="Email: hello@reallygreatsite.com" required>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="location-input" placeholder="Location: 123 Anywhere St., Any City" required>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-heading">
+                    <h2>About Me*</h2>
+                </div>
+                <textarea id="about-me-input" placeholder="Write a short professional summary..." required></textarea>
+            </div>
+
+            <div class="form-section">
+                <div class="form-heading">
+                    <h2>Skills <button type="button" class="add-btn" onclick="addrepeatingPoint('skills-container', 'skill')">+</button></h2>
+                </div>
+                <div id="skills-container">
+                    </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-heading">
+                    <h2>Languages <button type="button" class="add-btn" onclick="addrepeatingPoint('languages-container', 'language')">+</button></h2>
+                </div>
+                <div id="languages-container">
+                    </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-heading">
+                    <h2>Work Experience <button type="button" class="add-btn" onclick="addEntry('experience-container', 'experience')">+</button></h2>
+                </div>
+                <div id="experience-container">
+                    </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-heading">
+                    <h2>Education <button type="button" class="add-btn" onclick="addEntry('education-container', 'education')">+</button></h2>
+                </div>
+                <div id="education-container">
+                    </div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-heading">
+                    <h2>References <button type="button" class="add-btn" onclick="addrepeatingPoint('references-container', 'reference')">+</button></h2>
+                </div>
+                <div id="references-container">
+                    </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button type="submit" style="background-color: #2E7D32; color: white; border: none; padding: 10px 20px; font-size: 1.1em; border-radius: 4px; cursor: pointer;">Preview Resume</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="preview-container">
+        <div id="alert-banner">RED ALERT: REQUIRED DETAILS MISSED. PLEASE COMPLETE FORM FOR BEST RESULTS.</div>
+
+        <div id="resume-preview">
+            <div class="preview-header-bar">
+                <h1 id="p-name">JULIANA SILVA</h1>
+                <h2 id="p-title">SALES REPRESENTATIVE</h2>
+                <div class="photo-frame">
+                    <img id="p-photo" src="" alt="Photo Placeholder">
+                </div>
+            </div>
+            
+            <div class="preview-body">
+                <div class="preview-left-col">
+                    <h3>Contact</h3>
+                    <div class="contact-line"><span>📞</span> <p id="p-mobile"></p></div>
+                    <div class="contact-line"><span>✉️</span> <p id="p-email"></p></div>
+                    <div class="contact-line"><span>📍</span> <p id="p-location"></p></div>
+                    <hr>
+                    
+                    <h3>Expertise</h3>
+                    <div id="p-skills"></div>
+                    <hr>
+                    
+                    <h3>Language</h3>
+                    <div id="p-languages"></div>
+                </div>
+                
+                <div class="preview-right-col">
+                    <div class="timeline-line"></div>
+                    
+                    <div class="timeline-entry">
+                        <div class="timeline-point"></div>
+                        <div class="timeline-entry-header"><h2>Profile</h2></div>
+                        <div class="timeline-content">
+                            <p id="p-about"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-entry">
+                        <div class="timeline-point"></div>
+                        <div class="timeline-entry-header"><h2>Work Experience</h2></div>
+                        <div id="p-experience">
+                            </div>
+                    </div>
+                    
+                    <div class="timeline-entry">
+                        <div class="timeline-point"></div>
+                        <div class="timeline-entry-header"><h2>Education</h2></div>
+                        <div id="p-education">
+                            </div>
+                    </div>
+                    
+                    <div class="timeline-entry">
+                        <div class="timeline-point"></div>
+                        <div class="timeline-entry-header"><h2>References</h2></div>
+                        <div id="p-references" class="p-references bullet-list">
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="preview-actions">
+            <button id="edit-details-btn">Edit Details</button>
+            <button id="download-pdf-btn">Download PDF</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Logic to handle photo upload and form preview
+document.getElementById('photo-input').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            document.getElementById('photo-form-preview').src = event.target.result;
+            document.getElementById('photo-form-preview').style.display = 'block';
+            document.getElementById('upload-btn-label').style.display = 'none';
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+// Logic to handle adding repeating text points
+function addrepeatingPoint(containerId, type) {
+    const container = document.getElementById(containerId);
+    const div = document.createElement('div');
+    div.classList.add('repeating-point');
+    div.innerHTML = `<input type="text" placeholder="e.g. Sales Strategies" class="${type}-input">
+                     <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>`;
+    container.appendChild(div);
+}
+
+// Templates for major entries
+const templates = {
+    experience: () => `<div class="entry-field repeating-point">
+                        <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+                        <input type="text" placeholder="Company Name" class="exp-comp-input entry-field">
+                        <input type="text" placeholder="Position" class="exp-pos-input entry-field">
+                        <input type="text" placeholder="Dates e.g. 2020 - PRESENT" class="exp-date-input entry-field">
+                        <textarea placeholder="Responsibilities (one bullet per line)" class="exp-desc-input entry-field"></textarea>
+                      </div>`,
+    education: () => `<div class="entry-field repeating-point">
+                        <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+                        <input type="text" placeholder="e.g. Master of Business Management" class="edu-deg-input entry-field">
+                        <input type="text" placeholder="e.g. Wardiere University" class="edu-uni-input entry-field">
+                        <input type="text" placeholder="Dates e.g. 2029 - 2031" class="edu-date-input entry-field">
+                        <input type="text" placeholder="Percentage Subheading e.g. GPA: 3.8 / 4.0" class="edu-perc-input entry-field">
+                      </div>`
+};
+
+// Logic to handle adding major entries
+function addEntry(containerId, type) {
+    const container = document.getElementById(containerId);
+    container.insertAdjacentHTML('beforeend', templates[type]());
+}
+
+// Pre-populate with blank fields for testing and better UX
+addEntry('experience-container', 'experience');
+addEntry('education-container', 'education');
+addrepeatingPoint('skills-container', 'skill');
+addrepeatingPoint('languages-container', 'language');
+addrepeatingPoint('references-container', 'reference');
+
+// Global holder for uploaded photo data
+let uploadedPhotoDataUrl = null;
+
+// Photo input handling for upload and form preview
+document.getElementById('photo-input').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            uploadedPhotoDataUrl = event.target.result;
+            document.getElementById('photo-form-preview').src = uploadedPhotoDataUrl;
+            document.getElementById('photo-form-preview').style.display = 'block';
+            document.getElementById('upload-btn-label').style.display = 'none';
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+// Logic to handle form submission (Preview action)
+document.getElementById('resume-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Hide form, show preview
+    document.getElementById('form-container').style.display = 'none';
+    document.getElementById('preview-container').style.display = 'block';
+    
+    // Reset missing details alert
+    const alertBanner = document.getElementById('alert-banner');
+    alertBanner.style.display = 'none';
+    let isValid = true;
+    
+    // Mapping form inputs to preview elements
+    const populateText = (inputId, pId, placeholder = '[MISSING DETAIL]') => {
+        const val = document.getElementById(inputId).value.trim();
+        const pEl = document.getElementById(pId);
+        if(val) {
+            pEl.innerText = val;
+            pEl.classList.remove('missed-detail-marker');
+        } else {
+            pEl.innerHTML = `<span class="missed-detail-marker">${placeholder}</span>`;
+            isValid = false;
+        }
+    }
+
+    populateText('full-name-input', 'p-name');
+    populateText('title-input', 'p-title');
+    populateText('mobile-input', 'p-mobile');
+    populateText('email-input', 'p-email');
+    populateText('location-input', 'p-location');
+    populateText('about-me-input', 'p-about', '[MISSING SUMMARY]');
+
+    // Photo preview mapping
+    const pPhoto = document.getElementById('p-photo');
+    if(uploadedPhotoDataUrl) {
+        pPhoto.src = uploadedPhotoDataUrl;
+        pPhoto.alt = '[Juliana Silva Photo]';
+        pPhoto.classList.remove('missed-detail-marker');
+    } else {
+        pPhoto.src = '';
+        pPhoto.alt = '[MISSING PHOTO]';
+        pPhoto.classList.add('missed-detail-marker');
+        isValid = false;
+    }
+
+    // Dynamic Lists (Skills, Language, References)
+    const populateSimpleList = (inputClass, pContainerId, targetClass) => {
+        const pContainer = document.getElementById(pContainerId);
+        pContainer.innerHTML = '';
+        document.querySelectorAll(`.${inputClass}`).forEach(input => {
+            const val = input.value.trim();
+            if(val) {
+                pContainer.innerHTML += `<div class="${targetClass}">&#8226; <span>${val}</span></div>`;
+            } else {
+                pContainer.innerHTML += `<div class="${targetClass}">&#8226; <span class="missed-detail-marker">[MISSING DETAIL]</span></div>`;
+                isValid = false;
+            }
+        });
+    }
+    
+    populateSimpleList('skill-input', 'p-skills', 'skill-item');
+    populateSimpleList('lang-input', 'p-languages', 'skill-item');
+
+    // References List (Bullet list)
+    const pRefList = document.getElementById('p-references');
+    pRefList.innerHTML = '';
+    document.querySelectorAll('.reference-input').forEach(input => {
+        const val = input.value.trim();
+        if(val) {
+            pRefList.innerHTML += `<li>${val}</li>`;
+        } else {
+            pRefList.innerHTML += `<li class="missed-detail-marker">[MISSING DETAIL]</li>`;
+            isValid = false;
+        }
+    });
+
+    // Helper to get repeated field values, returns placeholder if empty
+    const getRepeatingVal = (item, cls, placeholder = '[MISSING]') => {
+        const input = item.querySelector(`.${cls}`);
+        if(input && input.value.trim()) return input.value.trim();
+        return `<span class="missed-detail-marker">${placeholder}</span>`;
+    }
+
+    // Work Experience (Timeline sections)
+    const pExp = document.getElementById('p-experience');
+    pExp.innerHTML = '';
+    document.querySelectorAll('#experience-container .entry-item').forEach(item => {
+        const comp = getRepeatingVal(item, 'exp-comp-input', 'MISSING COMPANY');
+        const pos = getRepeatingVal(item, 'exp-pos-input', 'MISSING POSITION');
+        const date = getRepeatingVal(item, 'exp-date-input', 'MISSING DATES');
+        const descInput = item.querySelector('.exp-desc-input');
+        
+        let desc = '<p class="missed-detail-marker">[MISSING DESCRIPTION]</p>';
+        if (descInput && descInput.value.trim()) {
+            desc = `<ul class="bullet-list">${descInput.value.split('\n').map(b => `<li>${b.trim()}</li>`).join('')}</ul>`;
+        }
+        
+        pExp.innerHTML += `
+            <div class="timeline-content">
+                <div class="timeline-entry-header">
+                    <h4>${pos}</h4>
+                    <span class="timeline-date-company">${comp} ${date}</span>
+                </div>
+                <div class="timeline-entry-content">${desc}</div>
+            </div>`;
+    });
+
+    // Education (Dynamic with explicit percentage subheading)
+    const pEdu = document.getElementById('p-education');
+    pEdu.innerHTML = '';
+    document.querySelectorAll('#education-container .entry-item').forEach(item => {
+        const deg = getRepeatingVal(item, 'edu-deg-input', 'MISSING DEGREE');
+        const uni = getRepeatingVal(item, 'edu-uni-input', 'MISSING UNIVERSITY');
+        const date = getRepeatingVal(item, 'edu-date-input', 'MISSING DATES');
+        const perc = item.querySelector('.edu-perc-input').value.trim(); // Subheading - optional per reference but requested here
+        
+        const subheading = perc ? `<span class="percentage-line">${perc}</span>` : `<span class="percentage-line missed-detail-marker">[MISSING SUBHEADING / PERCENTAGE]</span>`;
+
+        pEdu.innerHTML += `
+            <div class="timeline-content">
+                <div class="timeline-entry-header">
+                    <h4>${deg}</h4>
+                    <span class="timeline-date-company">${uni} ${date}</span>
+                </div>
+                ${subheading}
+            </div>`;
+    });
+
+    // Final Red Alert display logic
+    if(!isValid) {
+        alertBanner.style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+        alertBanner.style.display = 'none';
+    }
+});
+
+// Logic for action buttons on preview page
+document.getElementById('edit-details-btn').addEventListener('click', function() {
+    document.getElementById('preview-container').style.display = 'none';
+    document.getElementById('form-container').style.display = 'block';
+    window.scrollTo({ top: 0 });
+});
+
+document.getElementById('download-pdf-btn').addEventListener('click', function() {
+    const element = document.getElementById('resume-preview');
+    // Options for PDF generation matching paper size (roughly A4)
+    const opt = {
+        margin:       10, // 1cm margin all around
+        filename:     'juliana-silva-resume.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 }, // Higher scale for crisp text
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+});
+</script>
+
+</body>
+</html>
