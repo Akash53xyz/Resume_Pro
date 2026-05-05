@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated Resume Builder</title>
+    <style>
+        /* --- GLOBAL & FORM STYLES --- */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #e9ecef; margin: 0; padding: 20px; color: #333; }
+        * { box-sizing: border-box; }
+        .wrapper { max-width: 1000px; margin: 0 auto; }
+        button { cursor: pointer; font-family: inherit; }
+        
+        #form-section { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        
+        /* Validation Alerts */
+        .alert { display: none; background: #ffebee; color: #c62828; padding: 15px; border-radius: 4px; font-weight: bold; margin-bottom: 20px; text-align: center; border: 1px solid #ffcdd2;}
+        .error-border { border: 2px solid #c62828 !important; background-color: #fffafa !important;}
+
+        .form-block { margin-bottom: 20px; background: #f8f9fa; padding: 20px; border-radius: 6px; border: 1px solid #dee2e6; }
+        .block-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: bold; font-size: 1.1em; text-transform: uppercase; color: #222;}
+        
+        /* Heading with "+" button logic for repeatable points */
+        .btn-add { background: #111; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 14px;}
+        .btn-add:hover { background: #333; }
+        
+        label { display: block; margin-bottom: 5px; font-size: 14px; font-weight: bold; color: #444;}
+        input, textarea { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
+        textarea { height: 80px; resize: vertical; }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        /* Repeating Fields styling */
+        .dynamic-row { position: relative; border-left: 3px solid #111; padding-left: 15px; margin-bottom: 15px; background: white; padding: 15px; border-radius: 4px; border: 1px solid #ddd; }
+        .btn-remove { position: absolute; top: 10px; right: 10px; background: #d9534f; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+
+        .btn-main { display: block; width: 100%; max-width: 300px; margin: 30px auto 0; padding: 15px; background: #28a745; color: white; border: none; border-radius: 6px; font-size: 18px; font-weight: bold; }
+        .btn-main:hover { background: #218838; }
+
+        /* --- PREVIEW STYLES (Matching Harper Russo Layout) --- */
+        #preview-section { display: none; flex-direction: column; align-items: center; }
+        .preview-controls { margin-bottom: 20px; display: flex; gap: 15px; }
+        .preview-controls button { padding: 12px 25px; font-size: 16px; border: none; border-radius: 4px; color: white; font-weight: bold; }
+        .btn-edit { background: #6c757d; }
+        .btn-download { background: #007bff; }
+
+        /* Resume Canvas for print styling */
+        #resume-canvas { width: 210mm; min-height: 297mm; background: white; padding: 50px; box-shadow: 0 0 15px rgba(0,0,0,0.2); box-sizing: border-box; color: #111; position: relative;}
+        
+        /* Photo Option (Centered, Circular) */
+        .preview-photo-container { text-align: center; margin-bottom: 15px; }
+        .preview-photo { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #eee; display: none; margin: 0 auto;}
+
+        /* Header */
+        .res-name { text-align: center; font-size: 42px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase; margin: 0 0 10px 0; line-height: 1; }
+        .res-title { text-align: center; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: #555; margin: 0 0 15px 0; font-weight: normal; }
+        .res-contact { text-align: center; font-size: 12px; color: #444; margin-bottom: 20px; }
+        
+        .divider { border-top: 2px solid #111; margin: 20px 0; }
+        .divider-light { border-top: 1px solid #ccc; margin: 20px 0; }
+
+        /* Sections */
+        .section-title { text-align: center; font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; color: #111;}
+        .res-summary-title { text-align: center; font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; color: #111;}
+        .res-summary { font-size: 12px; line-height: 1.6; text-align: justify; margin-bottom: 20px; color: #444;}
+
+        /* Skills 3-Column Grid */
+        .skills-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center; font-size: 12px; margin-bottom: 20px; color: #444; }
+        
+        /* Timeline Items for Experience / Education */
+        .timeline-item { margin-bottom: 20px; border-left: 1px solid #ccc; padding-left: 20px; position: relative;}
+        .timeline-item::before { content: ""; position: absolute; left: -6px; top: 3px; width: 10px; height: 10px; border-radius: 50%; background: #ccc; border: 2px solid white; z-index: 10;}
+        .timeline-item-header { display: flex; justify-content: space-between; align-items: baseline; font-weight: bold; font-size: 14px; color: #111; margin-bottom: 3px; }
+        .tl-header-left { display: flex; flex-direction: column;}
+        .tl-role { font-weight: bold;}
+        .tl-comp { font-weight: normal; color: #555; font-size: 13px;}
+        .tl-date { font-weight: bold; font-size: 13px; text-align: right;}
+        
+        .item-percentage { font-size: 12px; font-style: italic; color: #555; display: block; margin-top: 2px;}
+        .tl-bullets { margin: 8px 0 0 0; padding-left: 15px; font-size: 12px; color: #444; line-height: 1.5; text-align: justify; list-style-type: disc;}
+        .tl-bullets li { margin-bottom: 3px; }
+
+        .ref-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 12px; line-height: 1.5; color: #444;}
+        .ref-item strong { color: #111;}
+
+        /* --- PRINT STYLES FOR NATIVE PDF SAVING --- */
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .wrapper, #form-section, .preview-controls { display: none !important; }
+            #preview-section { display: block; }
+            #resume-canvas { width: 100%; height: auto; box-shadow: none; padding: 0; margin: 0; page-break-after: avoid; page-break-before: avoid;}
+            @page { margin: 15mm; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <div id="form-section">
+        <div class="header">
+            <h1>Automated Resume Builder</h1>
+            <p>Harper Russo Design - Center Aligned Minimalist</p>
+        </div>
+
+        <div id="validation-alert" class="alert">RED ALERT: Please fill in all required fields highlighted in red below!</div>
+
+        <form id="main-form">
+            <div class="form-block">
+                <div class="block-title">1. Profile & Contact</div>
+                <div class="grid-2">
+                    <div>
+                        <label>Profile Photo (Optional)</label>
+                        <input type="file" id="f-photo" accept="image/*">
+                    </div>
+                    <div>
+                        <label>Full Name *</label>
+                        <input type="text" id="f-name" class="req" placeholder="Harper Russo">
+                    </div>
+                    <div>
+                        <label>Job Title *</label>
+                        <input type="text" id="f-title" class="req" placeholder="Business Operations Manager">
+                    </div>
+                    <div>
+                        <label>Phone *</label>
+                        <input type="text" id="f-phone" class="req" placeholder="+123-456-7890">
+                    </div>
+                    <div>
+                        <label>Email *</label>
+                        <input type="email" id="f-email" class="req" placeholder="hello@reallygreatsite.com">
+                    </div>
+                    <div>
+                        <label>Location *</label>
+                        <input type="text" id="f-loc" class="req" placeholder="Any City, ST 12345">
+                    </div>
+                </div>
+                <label>Professional Summary *</label>
+                <textarea id="f-summary" class="req" placeholder="I am a proficient Business Operations Manager..."></textarea>
+            </div>
+
+            <div class="form-block">
+                <div class="block-title"><span>2. Strengths & Expertise (Skills)</span> <button type="button" class="btn-add" onclick="add('skill')">+ Add</button></div>
+                <div id="skill-list" class="grid-2"></div>
+            </div>
+
+            <div class="form-block">
+                <div class="block-title"><span>3. Professional Experience</span> <button type="button" class="btn-add" onclick="add('exp')">+ Add</button></div>
+                <div id="exp-list"></div>
+            </div>
+
+            <div class="form-block">
+                <div class="block-title"><span>4. Education</span> <button type="button" class="btn-add" onclick="add('edu')">+ Add</button></div>
+                <div id="edu-list"></div>
+            </div>
+
+            <div class="form-block">
+                <div class="block-title"><span>5. Languages</span> <button type="button" class="btn-add" onclick="add('lang')">+ Add</button></div>
+                <div id="lang-list" class="grid-2"></div>
+            </div>
+
+            <div class="form-block">
+                <div class="block-title"><span>6. References</span> <button type="button" class="btn-add" onclick="add('ref')">+ Add</button></div>
+                <div id="ref-list" class="grid-2"></div>
+            </div>
+
+            <button type="button" class="btn-main" onclick="buildResume()">Preview Resume</button>
+        </form>
+    </div>
+</div>
+
+<div id="preview-section">
+    <div class="preview-controls">
+        <button class="btn-edit" onclick="goEdit()">Back to Edit</button>
+        <button class="btn-download" onclick="window.print()">Download PDF (Print)</button>
+    </div>
+
+    <div id="resume-canvas">
+        <div class="preview-photo-container">
+            <img id="out-photo" class="preview-photo" src="" alt="Profile Photo">
+        </div>
+
+        <h1 class="res-name" id="out-name">Name</h1>
+        <div class="res-contact" id="out-contact">Phone • Email • Location</div>
+        
+        <div class="divider"></div>
+
+        <div class="res-summary-title" id="out-title">Job Title</div>
+        <div class="res-summary" id="out-summary">Summary text goes here.</div>
+
+        <div class="divider-light"></div>
+
+        <div class="section-title">Strengths and Expertise</div>
+        <div class="skills-grid" id="out-skill">
+            </div>
+
+        <div class="divider-light"></div>
+
+        <div class="section-title">Professional Experience</div>
+        <div id="out-exp">
+            </div>
+
+        <div class="divider-light"></div>
+
+        <div class="section-title">Education</div>
+        <div id="out-edu">
+            </div>
+
+        <div id="lang-section-wrapper" style="display:none;">
+            <div class="divider-light"></div>
+            <div class="section-title">Languages</div>
+            <div class="skills-grid" id="out-lang">
+                </div>
+        </div>
+
+        <div id="ref-section-wrapper" style="display:none;">
+            <div class="divider-light"></div>
+            <div class="section-title">References</div>
+            <div class="ref-grid" id="out-ref">
+                </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // Templates for repeating rows
+    const tmpl = {
+        edu: `<div class="dynamic-row"><button type="button" class="btn-remove" onclick="this.parentElement.remove()">Remove</button>
+                <div class="grid-2">
+                    <input type="text" class="t-edu-uni req" placeholder="University / School Name *">
+                    <input type="text" class="t-edu-date req" placeholder="Date (e.g. 2016 - 2020) *">
+                </div>
+                <input type="text" class="t-edu-deg req" placeholder="Degree / Certificate *">
+                <input type="text" class="t-edu-perc" placeholder="Percentage / GPA Subheading (Optional)">
+                <textarea class="t-edu-desc" placeholder="Details (bullet points suggested)"></textarea>
+              </div>`,
+        exp: `<div class="dynamic-row"><button type="button" class="btn-remove" onclick="this.parentElement.remove()">Remove</button>
+                <div class="grid-2">
+                    <input type="text" class="t-exp-comp req" placeholder="Company Name *">
+                    <input type="text" class="t-exp-date req" placeholder="Dates (Oct 2019 - Present) *">
+                </div>
+                <input type="text" class="t-exp-pos req" placeholder="Job Title *">
+                <textarea class="t-exp-desc req" placeholder="Accomplishments (Use Enter for bullet points) *"></textarea>
+              </div>`,
+        skill: `<div class="dynamic-row" style="padding:10px; margin-bottom:10px;"><button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button>
+                <input type="text" class="t-skill req" placeholder="Skill (e.g. Strategic Planning) *" style="margin:0;"></div>`,
+        lang: `<div class="dynamic-row" style="padding:10px; margin-bottom:10px;"><button type="button" class="btn-remove" onclick="this.parentElement.remove()">X</button>
+                <input type="text" class="t-lang req" placeholder="Language (e.g. English) *" style="margin:0;"></div>`,
+        ref: `<div class="dynamic-row"><button type="button" class="btn-remove" onclick="this.parentElement.remove()">Remove</button>
+                <input type="text" class="t-ref-name req" placeholder="Name *">
+                <input type="text" class="t-ref-title" placeholder="Title & Company">
+                <input type="text" class="t-ref-contact" placeholder="Contact Info (Phone / Email)">
+              </div>`
+    };
+
+    // Photo input handler
+    let imgBase64 = "";
+    document.getElementById('f-photo').addEventListener('change', function(e) {
+        if(e.target.files[0]) {
+            let reader = new FileReader();
+            reader.onload = (event) => { imgBase64 = event.target.result; };
+            reader.readAsDataURL(e.target.files[0]);
+        } else {
+            imgBase64 = "";
+        }
+    });
+
+    // Function to add new fields
+    function add(type) {
+        document.getElementById(type + '-list').insertAdjacentHTML('beforeend', tmpl[type]);
+    }
+
+    // Initialize form with defaults
+    window.onload = () => { add('exp'); add('edu'); add('skill'); add('lang'); };
+
+    function buildResume() {
+        let valid = true;
+        document.querySelectorAll('.error-border').forEach(e => e.classList.remove('error-border'));
+
+        // Basic Validation - Red Alert logic
+        document.querySelectorAll('.req').forEach(el => {
+            if (!el.value.trim()) { 
+                valid = false; 
+                el.classList.add('error-border'); 
+            }
+        });
+
+        if(!valid) {
+            document.getElementById('validation-alert').style.display = 'block';
+            window.scrollTo({top: 0, behavior: 'smooth'});
+            return;
+        }
+        document.getElementById('validation-alert').style.display = 'none';
+
+        // 1. Static Profile
+        const outPhoto = document.getElementById('out-photo');
+        if(imgBase64) {
+            outPhoto.src = imgBase64;
+            outPhoto.style.display = 'inline-block';
+        } else {
+            outPhoto.style.display = 'none';
+        }
+
+        document.getElementById('out-name').innerText = document.getElementById('f-name').value;
+        document.getElementById('out-title').innerText = document.getElementById('f-title').value;
+        
+        const phone = document.getElementById('f-phone').value;
+        const email = document.getElementById('f-email').value;
+        const loc = document.getElementById('f-loc').value;
+        document.getElementById('out-contact').innerText = `${phone} • ${email} • ${loc}`;
+        
+        document.getElementById('out-summary').innerText = document.getElementById('f-summary').value;
+
+        // 2. Skills
+        const skillsOut = document.getElementById('out-skill');
+        skillsOut.innerHTML = '';
+        document.querySelectorAll('.t-skill').forEach(el => {
+            if(el.value) skillsOut.innerHTML += `<div>${el.value}</div>`;
+        });
+
+        // 3. Experience
+        let expHTML = '';
+        document.querySelectorAll('#exp-list .dynamic-row').forEach(row => {
+            const comp = row.querySelector('.t-exp-comp').value;
+            const date = row.querySelector('.t-exp-date').value;
+            const pos = row.querySelector('.t-exp-pos').value;
+            const desc = row.querySelector('.t-exp-desc').value;
+            
+            const bullets = desc.split('\n').filter(b=>b.trim()).map(b=>`<li>${b}</li>`).join('');
+            
+            expHTML += `
+                <div class="timeline-item">
+                    <div class="timeline-item-header">
+                        <div class="tl-header-left">
+                            <span class="tl-role">${pos}</span>
+                            <span class="tl-comp">${comp}</span>
+                        </div>
+                        <div class="tl-date">${date}</div>
+                    </div>
+                    <ul class="tl-bullets">${bullets}</ul>
+                </div>`;
+        });
+        document.getElementById('out-exp').innerHTML = expHTML;
+
+        // 4. Education
+        let eduHTML = '';
+        document.querySelectorAll('#edu-list .dynamic-row').forEach(row => {
+            const uni = row.querySelector('.t-edu-uni').value;
+            const date = row.querySelector('.t-edu-date').value;
+            const deg = row.querySelector('.t-edu-deg').value;
+            const perc = row.querySelector('.t-edu-perc').value;
+            const desc = row.querySelector('.t-edu-desc').value;
+            
+            const percHtml = perc ? `<span class="item-percentage">${perc}</span>` : '';
+            const bullets = desc.split('\n').filter(b=>b.trim()).map(b=>`<li>${b}</li>`).join('');
+
+            eduHTML += `
+                <div class="timeline-item" style="margin-bottom: 15px;">
+                    <div class="timeline-item-header">
+                        <div class="tl-header-left">
+                            <span class="tl-role">${deg}</span>
+                            <span class="tl-comp">${uni}</span>
+                            ${percHtml}
+                        </div>
+                        <div class="tl-date">${date}</div>
+                    </div>
+                    ${bullets ? `<ul class="tl-bullets" style="margin-top:5px;">${bullets}</ul>` : ''}
+                </div>`;
+        });
+        document.getElementById('out-edu').innerHTML = eduHTML;
+
+        // 5. Languages
+        const langWrappper = document.getElementById('lang-section-wrapper');
+        const langOut = document.getElementById('out-lang');
+        langOut.innerHTML = '';
+        let hasLangs = false;
+        document.querySelectorAll('.t-lang').forEach(el => {
+            if(el.value) { langOut.innerHTML += `<div>${el.value}</div>`; hasLangs = true; }
+        });
+        langWrappper.style.display = hasLangs ? 'block' : 'none';
+
+        // 6. References
+       const refWrapper = document.getElementById('ref-section-wrapper');
+        const refOut = document.getElementById('out-ref');
+        refOut.innerHTML = '';
+        let hasRefs = false;
+        document.querySelectorAll('#ref-list .dynamic-row').forEach(row => {
+            const name = row.querySelector('.t-ref-name').value;
+            const title = row.querySelector('.t-ref-title').value;
+            const contact = row.querySelector('.t-ref-contact').value;
+            
+            if(name) {
+                hasRefs = true;
+                refOut.innerHTML += `
+                    <div class="ref-item">
+                        <strong>${name}</strong><br>
+                        ${title ? `${title}<br>` : ''}
+                        ${contact ? `${contact}` : ''}
+                    </div>`;
+            }
+        });
+        refWrapper.style.display = hasRefs ? 'block' : 'none';
+
+        // Transition to preview
+        document.getElementById('form-container').style.display = 'none';
+        document.getElementById('preview-section').style.display = 'flex';
+        window.scrollTo(0,0);
+    }
+
+    function goEdit() {
+        document.getElementById('preview-section').style.display = 'none';
+        document.getElementById('form-container').style.display = 'block';
+        window.scrollTo(0,0);
+    }
+</script>
+</body>
+</html>

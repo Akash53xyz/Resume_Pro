@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Dashboard | Collapsible Menu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- CSS STYLES --- */
+        :root {
+            --primary: #2563eb;
+            --dark: #0f172a;
+            --white: #ffffff;
+            --bg: #f1f5f9;
+            --transition: 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+    body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+        }
+
+        /* The white card holding the photo and buttons */
+        .container {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Keeps the image responsive and neat */
+        .photo-box img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+    
+        
+
+        /* --- STICKY MENU BAR --- */
+        .navbar {
+            background: var(--dark);
+            color: white;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo i { color: #38bdf8; }
+
+        /* Menu Button (Hamburger) */
+        .menu-btn {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: white;
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .menu-btn:hover {
+            background: var(--primary);
+        }
+
+        /* Menu Content (Hidden by Default) */
+        .nav-details {
+            position: absolute;
+            top: 70px;
+            right: 5%;
+            background: var(--dark);
+            width: 250px;
+            border-radius: 10px;
+            overflow: hidden;
+            max-height: 0; /* Hidden */
+            transition: max-height 0.4s ease;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        /* When Menu is Active */
+        .nav-details.active {
+            max-height: 400px; /* Shows content */
+            padding: 10px 0;
+        }
+
+        .nav-details a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px 25px;
+            color: #cbd5e1;
+            text-decoration: none;
+            transition: var(--transition);
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .nav-details a:hover {
+            background: #1e293b;
+            color: white;
+            padding-left: 30px;
+        }
+
+        /* --- DASHBOARD CONTENT --- */
+ /* Hero Section */
+
+.main-btn {
+    padding: 18px 35px;
+    border-radius: 50px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.create-btn { background: #2563eb; color: white; }
+.Back { background: #10b981; color: white; }
+
+.main-btn:hover { transform: scale(1.05); }
+
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">
+            <i class="fas fa-microchip"></i> ResumePro
+            
+        </div>
+
+        <button class="menu-btn" onclick="toggleMenu()">
+            <i class="fas fa-bars"></i> Menu
+        </button>
+
+        <div class="nav-details" id="navDetails">
+            <a href="index.html"><i class="fas fa-home"></i> Home</a>
+            <a href="Chose_tamplate"><i class="fas fa-file-invoice"></i> Templates</a>
+            <a href="ATS.html"><i class="fas fa-chart-line"></i> ATS Evaluator</a>
+            <a href="#"><i class="fas fa-file-pdf"></i> Project Report</a>
+            <a href="#"><i class="fas fa-user"></i> My Profile</a>
+        </div>
+    </nav>
+
+      <main class="hero">
+      <div class="container">
+        <div class="photo-box">
+            <img src="images/M2.jpg">
+           
+        </div>
+        <div class="btn-container">
+          <button class="main-btn create-btn" id="go-create">Create Resume</button>
+            <button class="main-btn Back" id="go-back">Back</button>
+        </div>
+    </main>
+
+
+    <script>
+        // --- 1. MENU TOGGLE LOGIC ---
+        function toggleMenu() {
+            const menu = document.getElementById('navDetails');
+            menu.classList.toggle('active');
+        }
+
+        // Close menu if clicked outside
+        window.onclick = function(event) {
+            if (!event.target.closest('.navbar')) {
+                document.getElementById('navDetails').classList.remove('active');
+            }
+        }
+
+       
+
+        // --- 3. REDIRECTION LOGIC ---
+    // Select the buttons using their IDs
+    const goCreate = document.getElementById('go-create');
+    const goBack = document.getElementById('go-back');
+
+    // Add click events to the buttons
+    goCreate.addEventListener('click', () => {
+        window.location.href = 'M_2.html'; 
+    });
+
+    goBack.addEventListener('click', () => {
+        window.location.href = 'Executive_Design.html';
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Builder</title>
+    <style>
+        /* CSS STYLES */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background-color: #fff;
+            padding: 40px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+
+        h1, h2, h3, h4 {
+            color: #594738;
+        }
+
+        /* Form Styling */
+        #resumeForm {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .form-section {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #fafafa;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #4A4A4A;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="date"],
+        textarea,
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        textarea {
+            resize: vertical;
+            height: 100px;
+        }
+
+        /* Dynamic fields styling */
+        .dynamic-fields-container {
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+
+        .dynamic-field {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .dynamic-entry {
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: #fff;
+        }
+
+        .remove-field {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .remove-entry {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            float: right;
+            margin-bottom: 10px;
+        }
+
+        .add-field {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+
+        .add-field span {
+            font-size: 16px;
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        /* Submit Button */
+        .btn {
+            background-color: #594738;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background-color: #4A3A2D;
+        }
+
+        /* Validation Styling */
+        input.invalid,
+        textarea.invalid,
+        select.invalid {
+            border-color: #ff4d4d !important;
+            box-shadow: 0 0 5px rgba(255, 77, 77, 0.5);
+        }
+
+        .error-message {
+            color: #ff4d4d;
+            font-size: 12px;
+            margin-top: -10px;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        /* PREVIEW SECTION STYLING (Based on user image) */
+        #previewContainer {
+            display: none;
+        }
+
+        #resumePreview {
+            display: flex;
+            background-color: #FFFFFF;
+            border: 1px solid #C9BCB0;
+            border-radius: 10px;
+            overflow: hidden;
+            max-width: 900px;
+            margin: auto;
+            color: #1B1B1B;
+            font-size: 14px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        /* Left Column (Dark Brown) */
+        #p-left-col {
+            width: 35%;
+            background-color: #594738;
+            color: #FFFFFF;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        #p-photo-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        #p-photo-container img {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid #C9BCB0;
+        }
+
+        .p-section-title-left {
+            text-transform: uppercase;
+            font-weight: bold;
+            font-size: 16px;
+            border-bottom: 2px solid #FFFFFF;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            color: #FFFFFF;
+        }
+
+        .p-education-list, .p-skills-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 13px;
+        }
+
+        .p-education-item {
+            margin-bottom: 10px;
+        }
+
+        .p-education-item span {
+            display: block;
+        }
+
+        .p-education-item .degree { font-weight: bold; }
+        .p-education-item .details { color: #DCDCDC; }
+
+        .p-skills-list li {
+            position: relative;
+            padding-left: 15px;
+            margin-bottom: 7px;
+        }
+
+        .p-skills-list li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #FFFFFF;
+        }
+
+        /* Right Column (Light Beige) */
+        #p-right-col {
+            width: 65%;
+            background-color: #D6CCC2;
+            padding: 40px;
+            color: #1B1B1B;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        #p-header {
+            margin-bottom: 10px;
+        }
+
+        #p-name {
+            text-transform: uppercase;
+            font-weight: bold;
+            font-size: 40px;
+            color: #1B1B1B;
+            margin: 0;
+            line-height: 1.1;
+        }
+
+        #p-title {
+            text-transform: uppercase;
+            color: #6D6D6D;
+            font-size: 16px;
+            letter-spacing: 1px;
+            margin-top: 5px;
+            border-bottom: 1px solid #6D6D6D;
+            padding-bottom: 10px;
+            display: inline-block;
+        }
+
+        .p-section-title-right {
+            text-transform: uppercase;
+            font-weight: bold;
+            font-size: 16px;
+            color: #1B1B1B;
+            border-bottom: 1px solid #1B1B1B;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+
+        #p-profile-text {
+            color: #4A4A4A;
+            line-height: 1.6;
+            margin: 0;
+            font-size: 13px;
+        }
+
+        #p-experience-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .p-experience-item {
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        .p-experience-item .role {
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        .p-experience-item .company-dates {
+            color: #6D6D6D;
+            margin-left: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .p-experience-item .bullet-point {
+            margin-right: 8px;
+            color: #594738;
+        }
+
+        #p-contact-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 13px;
+            color: #4A4A4A;
+        }
+
+        #p-contact-list li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .p-contact-icon {
+            color: #594738;
+            background-color: transparent;
+            margin-right: 15px;
+            font-size: 18px;
+        }
+
+        /* Extra graphic elements from image */
+        .dot-pattern {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: #594738;
+        }
+
+        .right-dots {
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+
+        .bottom-left-dots {
+            justify-content: flex-start;
+            margin-top: auto;
+        }
+
+        /* Language Section */
+        .p-language-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 13px;
+        }
+
+        .p-language-list li {
+            position: relative;
+            padding-left: 15px;
+            margin-bottom: 7px;
+            color: #FFFFFF;
+        }
+
+        .p-language-list li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #FFFFFF;
+        }
+
+        /* Preview Action Buttons */
+        #previewActions {
+            margin-top: 30px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .action-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .edit-btn {
+            background-color: #594738;
+            color: white;
+        }
+
+        .download-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        /* Print styling for PDF */
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                max-width: 100%;
+                width: 100%;
+                padding: 0;
+            }
+            #resumeForm, #previewActions, .container > h1 {
+                display: none;
+            }
+            #previewContainer {
+                display: block !important;
+            }
+            #resumePreview {
+                max-width: 100%;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+            }
+            #p-left-col, #p-right-col {
+                padding: 30px;
+            }
+            #p-left-col {
+                background-color: #594738 !important;
+                -webkit-print-color-adjust: exact;
+            }
+            #p-right-col {
+                background-color: #C9BCB0 !important;
+                -webkit-print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Modern Resume Builder</h1>
+
+        <form id="resumeForm">
+            <div class="form-section form-group">
+                <label for="photo">Profile Photo</label>
+                <input type="file" id="photo" name="photo" accept="image/*">
+                <div id="photoPreview"></div>
+                <div class="error-message" id="photoError"></div>
+            </div>
+
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName" name="fullName" placeholder="e.g. Juliana Silva" required>
+                </div>
+                <div class="form-group">
+                    <label for="jobTitle">Job Title</label>
+                    <input type="text" id="jobTitle" name="jobTitle" placeholder="e.g. Digital Marketing" required>
+                </div>
+                <div class="form-group">
+                    <label for="about">About (Profile)</label>
+                    <textarea id="about" name="about" placeholder="Write a short personal statement..." required></textarea>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Contact Details</h3>
+                <div class="form-group">
+                    <label for="mobNo">Mobile Number</label>
+                    <input type="tel" id="mobNo" name="mobNo" placeholder="e.g. +123-456-7890" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="e.g. hello@reallygreatsite.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" name="location" placeholder="e.g. 123 Anywhere St., Any City" required>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="add-field-wrapper">
+                    <h3>Skills</h3>
+                    <button type="button" class="add-field" id="addSkill"><span>+</span>Add Skill Point</button>
+                </div>
+                <div class="dynamic-fields-container" id="skillsContainer">
+                    <div class="dynamic-field">
+                        <input type="text" name="skills[]" placeholder="e.g. Digital Marketing Strategy" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="add-field-wrapper">
+                    <h3>Language</h3>
+                    <button type="button" class="add-field" id="addLanguage"><span>+</span>Add Language Point</button>
+                </div>
+                <div class="dynamic-fields-container" id="languagesContainer">
+                    <div class="dynamic-field">
+                        <input type="text" name="languages[]" placeholder="e.g. English" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="add-field-wrapper">
+                    <h3>Work Experience</h3>
+                    <button type="button" class="add-field" id="addExperience"><span>+</span>Add New Experience Entry</button>
+                </div>
+                <div class="dynamic-fields-container" id="experienceContainer">
+                    <div class="dynamic-entry">
+                        <div class="form-group">
+                            <label>Role</label>
+                            <input type="text" name="expRole[]" placeholder="e.g. Digital Marketing Specialist" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Company</label>
+                            <input type="text" name="expCompany[]" placeholder="e.g. Ingoude Company" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" name="expLocation[]" placeholder="e.g. Jakarta" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Dates (Start - End)</label>
+                            <input type="text" name="expDates[]" placeholder="e.g. Jan 2022 - Present" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="add-field-wrapper">
+                    <h3>Education</h3>
+                    <button type="button" class="add-field" id="addEducation"><span>+</span>Add New Education Entry</button>
+                </div>
+                <div class="dynamic-fields-container" id="educationContainer">
+                    <div class="dynamic-entry">
+                        <div class="form-group">
+                            <label>Degree</label>
+                            <input type="text" name="eduDegree[]" placeholder="e.g. Bachelor of Communication" required>
+                        </div>
+                        <div class="form-group">
+                            <label>University</label>
+                            <input type="text" name="eduUniversity[]" placeholder="e.g. Rimberio University" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" name="eduLocation[]" placeholder="e.g. Jakarta" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Dates (Start - End)</label>
+                            <input type="text" name="eduDates[]" placeholder="e.g. 2016 – 2020" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Percentage/GPA (Subheading)</label>
+                            <input type="text" name="eduPercentage[]" placeholder="e.g. CGPA: 3.8/4.0" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn">Preview Resume</button>
+        </form>
+
+        <div id="previewContainer">
+            <div id="resumePreview">
+                <div id="p-left-col">
+                    <div class="dot-pattern top-left-dots">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                    <div id="p-photo-container">
+                        <img src="" alt="Profile Photo" id="p-photo">
+                    </div>
+                    <div>
+                        <h3 class="p-section-title-left">EDUCATION</h3>
+                        <ul class="p-education-list" id="p-education-list">
+                            </ul>
+                    </div>
+                    <div>
+                        <h3 class="p-section-title-left">SKILLS</h3>
+                        <ul class="p-skills-list" id="p-skills-list">
+                            </ul>
+                    </div>
+                    <div>
+                        <h3 class="p-section-title-left">LANGUAGE</h3>
+                        <ul class="p-language-list" id="p-language-list">
+                            </ul>
+                    </div>
+                    <div class="dot-pattern bottom-left-dots">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                </div>
+                <div id="p-right-col">
+                    <div class="dot-pattern top-right-dots right-dots">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                    <div id="p-header">
+                        <h1 id="p-name">JULIANA SILVA</h1>
+                        <span id="p-title">DIGITAL MARKETING</span>
+                    </div>
+                    <div>
+                      <h3 class="p-section-title-right">PROFILE</h3>
+                        <p id="p-profile-text"></p>
+                    </div>
+                    <div>
+                        <h3 class="p-section-title-right">EXPERIENCE</h3>
+                        <ul id="p-experience-list">
+                            </ul>
+                    </div>
+                    <div>
+                        <h3 class="p-section-title-right">CONTACT</h3>
+                        <ul id="p-contact-list">
+                            <li><span class="p-contact-icon">📞</span><span id="p-mobNo"></span></li>
+                            <li><span class="p-contact-icon">✉️</span><span id="p-email"></span></li>
+                            <li><span class="p-contact-icon">📍</span><span id="p-location"></span></li>
+                        </ul>
+                    </div>
+                    <div class="dot-pattern bottom-right-dots right-dots">
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                        <div class="dot"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="previewActions">
+                <button class="action-btn edit-btn" id="editBtn">Edit</button>
+                <button class="action-btn download-btn" id="downloadBtn">Download PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JS CODE
+
+        const resumeForm = document.getElementById('resumeForm');
+        const previewContainer = document.getElementById('previewContainer');
+        const formSections = document.querySelectorAll('.form-section, .form-group'); // Form fields
+        const dynamicFieldsContainers = document.querySelectorAll('.dynamic-fields-container');
+
+        // Function for adding new dynamic points/entries
+        function createDynamicInputHTML(type, count) {
+            if (type === 'skill' || type === 'language') {
+                return `
+                    <div class="dynamic-field">
+                        <input type="text" name="${type}s[]" placeholder="e.g. New point..." required>
+                        <button type="button" class="remove-field">Remove</button>
+                    </div>`;
+            } else if (type === 'experience') {
+                return `
+                    <div class="dynamic-entry">
+                        <button type="button" class="remove-entry">Remove Entry</button>
+                        <div class="form-group">
+                            <label>Role</label>
+                            <input type="text" name="expRole[]" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Company</label>
+                            <input type="text" name="expCompany[]" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" name="expLocation[]" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Dates (Start - End)</label>
+                            <input type="text" name="expDates[]" required>
+                        </div>
+                    </div>`;
+            } else if (type === 'education') {
+                return `
+                    <div class="dynamic-entry">
+                        <button type="button" class="remove-entry">Remove Entry</button>
+                        <div class="form-group">
+                            <label>Degree</label>
+                            <input type="text" name="eduDegree[]" required>
+                        </div>
+                        <div class="form-group">
+                            <label>University</label>
+                            <input type="text" name="eduUniversity[]" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" name="eduLocation[]" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Dates (Start - End)</label>
+                            <input type="text" name="eduDates[]" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Percentage/GPA (Subheading)</label>
+                            <input type="text" name="eduPercentage[]" required>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        function addDynamicField(containerId, type) {
+            const container = document.getElementById(containerId);
+            const count = container.children.length + 1;
+            container.insertAdjacentHTML('beforeend', createDynamicInputHTML(type, count));
+        }
+
+        // Add Skills
+        document.getElementById('addSkill').addEventListener('click', () => {
+            addDynamicField('skillsContainer', 'skill');
+        });
+
+        // Add Languages
+        document.getElementById('addLanguage').addEventListener('click', () => {
+            addDynamicField('languagesContainer', 'language');
+        });
+
+        // Add Experience
+        document.getElementById('addExperience').addEventListener('click', () => {
+            addDynamicField('experienceContainer', 'experience');
+        });
+
+        // Add Education
+        document.getElementById('addEducation').addEventListener('click', () => {
+            addDynamicField('educationContainer', 'education');
+        });
+
+        // Event listener for removing fields (using delegation)
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-field')) {
+                e.target.closest('.dynamic-field').remove();
+            } else if (e.target.classList.contains('remove-entry')) {
+                e.target.closest('.dynamic-entry').remove();
+            }
+        });
+
+        // Function for form validation
+        function validateForm() {
+            let isValid = true;
+            const inputs = resumeForm.querySelectorAll('input[required], textarea[required]');
+            const photoInput = document.getElementById('photo');
+
+            // Reset previous validation
+            inputs.forEach(input => input.classList.remove('invalid'));
+            document.getElementById('photo').classList.remove('invalid');
+            document.getElementById('photoError').innerText = '';
+
+            inputs.forEach(input => {
+                if (input.value.trim() === '') {
+                    isValid = false;
+                    input.classList.add('invalid');
+                }
+            });
+
+            // Check if photo is uploaded
+            if (!photoInput.files || photoInput.files.length === 0) {
+                isValid = false;
+                photoInput.classList.add('invalid');
+                document.getElementById('photoError').innerText = 'Please upload a photo';
+            }
+
+            if (!isValid) {
+                alert('Please fill all mandatory fields (highlighted in red) before previewing.');
+            }
+            return isValid;
+        }
+
+        // Function to populate preview with form data
+        function populatePreview(formData) {
+            // Basic Info
+            document.getElementById('p-name').innerText = formData.get('fullName').toUpperCase();
+            document.getElementById('p-title').innerText = formData.get('jobTitle').toUpperCase();
+            document.getElementById('p-profile-text').innerText = formData.get('about');
+
+            // Contact
+            document.getElementById('p-mobNo').innerText = formData.get('mobNo');
+            document.getElementById('p-email').innerText = formData.get('email');
+            document.getElementById('p-location').innerText = formData.get('location');
+
+            // Photo
+            const photoInput = document.getElementById('photo');
+            const photoFile = photoInput.files[0];
+            const pPhoto = document.getElementById('p-photo');
+            if (photoFile) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    pPhoto.src = e.target.result;
+                }
+                reader.readAsDataURL(photoFile);
+            }
+
+            // Skills
+            const skills = formData.getAll('skills[]');
+            const skillsList = document.getElementById('p-skills-list');
+            skillsList.innerHTML = '';
+            skills.forEach(skill => {
+                if (skill.trim() !== '') {
+                    skillsList.innerHTML += `<li>${skill}</li>`;
+                }
+            });
+
+            // Languages
+            const languages = formData.getAll('languages[]');
+            const languageList = document.getElementById('p-language-list');
+            languageList.innerHTML = '';
+            languages.forEach(language => {
+                if (language.trim() !== '') {
+                    languageList.innerHTML += `<li>${language}</li>`;
+                }
+            });
+
+            // Experience
+            const expRoles = formData.getAll('expRole[]');
+            const expCompanies = formData.getAll('expCompany[]');
+            const expLocations = formData.getAll('expLocation[]');
+            const expDates = formData.getAll('expDates[]');
+            const experienceList = document.getElementById('p-experience-list');
+            experienceList.innerHTML = '';
+
+            for (let i = 0; i < expRoles.length; i++) {
+                experienceList.innerHTML += `
+                    <li class="p-experience-item">
+                        <div class="role">${expRoles[i]}</div>
+                        <div class="company-dates"><span class="bullet-point">•</span>${expCompanies[i]}, ${expLocations[i]} | ${expDates[i]}</div>
+                    </li>
+                `;
+            }
+
+            // Education
+            const eduDegrees = formData.getAll('eduDegree[]');
+            const eduUniversities = formData.getAll('eduUniversity[]');
+            const eduLocations = formData.getAll('eduLocation[]');
+            const eduDates = formData.getAll('eduDates[]');
+            const eduPercentages = formData.getAll('eduPercentage[]');
+            const educationList = document.getElementById('p-education-list');
+            educationList.innerHTML = '';
+
+            for (let i = 0; i < eduDegrees.length; i++) {
+                educationList.innerHTML += `
+                    <li class="p-education-item">
+                        <span class="degree">${eduDegrees[i]}</span>
+                        <span class="details">${eduUniversities[i]}, ${eduLocations[i]} | ${eduDates[i]}</span>
+                        <span class="details subheading">${eduPercentages[i]}</span>
+                    </li>
+                `;
+            }
+        }
+
+        // Handling Preview Action
+        resumeForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // Stop actual submission
+
+            if (validateForm()) {
+                const formData = new FormData(resumeForm);
+                populatePreview(formData);
+                resumeForm.style.display = 'none';
+                previewContainer.style.display = 'block';
+                document.querySelector('h1').style.display = 'none'; // Hide main heading
+            }
+        });
+
+        // Edit button functionality
+        document.getElementById('editBtn').addEventListener('click', () => {
+            previewContainer.style.display = 'none';
+            resumeForm.style.display = 'flex';
+            document.querySelector('h1').style.display = 'block';
+        });
+
+        // Download PDF functionality (Triggers native print option)
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            // Check for print media queries to ensure proper styling
+            window.print();
+        });
+
+    </script>
+</body>
+</html>
+               
